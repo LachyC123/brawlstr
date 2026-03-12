@@ -1,0 +1,29 @@
+:root {
+  --bg: #090e1a;
+  --panel: #161d2d;
+  --panel-border: #28324a;
+  --text: #dce6ff;
+  --accent: #57dbff;
+}
+* { box-sizing: border-box; user-select: none; }
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: radial-gradient(circle at top, #16223f, var(--bg));
+  color: var(--text);
+  font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+}
+#app {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+#gameCanvas {
+  width: min(96vw, 1280px);
+  aspect-ratio: 16/9;
+  border-radius: 18px;
+  border: 2px solid var(--panel-border);
+  background: #0d1424;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(85, 215, 255, 0.2) inset;
+}
