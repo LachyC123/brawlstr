@@ -17,6 +17,9 @@ export class MatchScene {
     this.particles = [];
     this.ambient = [];
     this.celebrate = 0;
+    this.eventText = 'Match start';
+    this.eventTimer = 0;
+    this.serveFlash = 0;
   }
 
   enter(modeRanked = true) {
@@ -26,7 +29,7 @@ export class MatchScene {
     this.rally = 0;
     this.stats = { spikes: 0, specials: 0 };
     this.particles = [];
-    this.ambient = Array.from({ length: 20 }, (_, i) => ({
+    this.ambient = Array.from({ length: 26 }, (_, i) => ({
       x: (i * 37) % this.game.width,
       y: 640 + (i * 17) % 350,
       speed: 8 + (i % 5) * 2,
@@ -41,15 +44,30 @@ export class MatchScene {
     this.net = new Net(360, this.floorY + 5);
     this.roundOver = false;
     this.celebrate = 0;
+    this.serveFlash = 0.35;
+    this.eventText = 'Opening serve';
+    this.eventTimer = 1;
     this.difficulty = Math.min(0.92, 0.45 + this.game.save.profile.trophies / 900);
     this.ball.serve(true);
     this.game.audio.play('serve');
     this.game.ui.renderMatchHUD(this.hudState());
-    this.game.ui.toast(this.modeRanked ? 'Trophy Clash' : 'Casual Rally');
+    this.game.ui.showMatchIntro(this.modeRanked ? 'Trophy Clash' : 'Casual Rally');
   }
 
   hudState() {
-    return { playerScore: this.playerScore, aiScore: this.aiScore, rally: this.rally, energy: this.player.energy };
+    return {
+      playerScore: this.playerScore,
+      aiScore: this.aiScore,
+      rally: this.rally,
+      energy: this.player.energy,
+      specialReady: this.player.specialReady,
+      eventText: this.eventText,
+    };
+  }
+
+  postEvent(text, timer = 1.1) {
+    this.eventText = text;
+    this.eventTimer = timer;
   }
 
   update(dt) {
@@ -61,8 +79,17 @@ export class MatchScene {
 
     const i = this.game.input.state;
     this.player.update(dt, (i.right ? 1 : 0) - (i.left ? 1 : 0), i.jump, i.special, 2050);
-    if (this.player.justJumped) this.game.audio.play('jump');
-    if (this.player.specialTimer > 0.52) this.game.audio.play('characterSpecial');
+    if (this.player.justJumped) {
+      this.game.audio.play('jump');
+      this.spawnBurst(this.player.x, this.player.y - 14, '#d7eeff', 6, 130, 'ring');
+      this.postEvent('Jump challenge');
+    }
+    if (this.player.specialTimer > 0.52) {
+      this.game.audio.play('characterSpecial');
+      this.shake = 12;
+      this.spawnBurst(this.player.x + 20, this.player.y - 62, this.player.character.fxColor, 20, 260, 'spark');
+      this.postEvent('Special unleashed!', 1.25);
+    }
 
     this.ai.think(this.ball, dt, this.difficulty, { min: 380, max: 690 });
 
@@ -74,19 +101,27 @@ export class MatchScene {
     this.updateParticles(dt);
 
     if (this.ball.y + this.ball.radius > this.floorY + 2) {
-      this.spawnBurst(this.ball.x, this.floorY - 8, '#b6d6ff', 12, 130);
+      this.spawnBurst(this.ball.x, this.floorY - 8, '#b6d6ff', 16, 180, 'dust');
+      this.shake = 8;
       const playerLost = this.ball.x < 360;
+      this.postEvent(playerLost ? 'Point lost' : 'Point scored', 0.9);
       this.scorePoint(!playerLost);
     }
 
     if (this.ball.x < 10 || this.ball.x > this.game.width - 10) {
       this.ball.vx *= -0.88;
       this.ball.x = Math.max(10, Math.min(this.game.width - 10, this.ball.x));
-      this.spawnBurst(this.ball.x, this.ball.y, '#cce6ff', 6, 90);
+      this.spawnBurst(this.ball.x, this.ball.y, '#cce6ff', 7, 95, 'spark');
+      this.postEvent('Wall ricochet', 0.5);
     }
+
+    if (this.eventTimer > 0) this.eventTimer -= dt;
+    else if (this.rally >= 5) this.eventText = 'Hot rally!';
+    else this.eventText = this.player.specialReady ? 'Special ready' : 'Keep pressure high';
 
     this.shake *= 0.84;
     this.celebrate = Math.max(0, this.celebrate - dt);
+    this.serveFlash = Math.max(0, this.serveFlash - dt);
     this.game.ui.renderMatchHUD(this.hudState());
   }
 
@@ -96,7 +131,8 @@ export class MatchScene {
       p.life -= dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      p.vy += 500 * dt;
+      p.vy += p.gravity * dt;
+      p.vx *= 0.98;
     });
 
     this.ambient.forEach((p) => {
@@ -108,17 +144,19 @@ export class MatchScene {
     });
   }
 
-  spawnBurst(x, y, color, count = 8, speed = 120) {
+  spawnBurst(x, y, color, count = 8, speed = 120, style = 'spark') {
     for (let i = 0; i < count; i += 1) {
-      const a = (Math.PI * 2 * i) / count + Math.random() * 0.3;
+      const a = (Math.PI * 2 * i) / count + Math.random() * 0.5;
       const power = speed * (0.5 + Math.random() * 0.9);
       this.particles.push({
         x,
         y,
         vx: Math.cos(a) * power,
-        vy: Math.sin(a) * power - 30,
+        vy: Math.sin(a) * power - (style === 'dust' ? 40 : 10),
         color,
-        life: 0.32 + Math.random() * 0.18,
+        life: 0.34 + Math.random() * 0.24,
+        gravity: style === 'ring' ? 120 : style === 'dust' ? 540 : 360,
+        style,
       });
     }
   }
@@ -130,6 +168,7 @@ export class MatchScene {
       if (Math.abs(dx) < 48 && Math.abs(dy) < 46 && this.ball.vy > -900) {
         const pwr = actor.character.stats.power * this.game.characterSystem.statMultiplier(actor.character.id);
         const aimBonus = Math.max(0, Math.min(110, Math.abs(dx) * 2));
+        const strong = pwr > 1.02 || Math.abs(dx) > 26;
         this.ball.vx = side * (300 + Math.abs(dx) * 4.5 + pwr * 130 + aimBonus);
         this.ball.vy = -980 - pwr * 145;
 
@@ -137,22 +176,24 @@ export class MatchScene {
           this.stats.specials += 1;
           this.ball.vx *= 1.35;
           this.ball.vy *= 1.07;
-          this.ball.ignite = actor.character.id === 'flare' ? 1.2 : 0.35;
+          this.ball.ignite = actor.character.id === 'flare' ? 1.2 : 0.4;
           if (actor.character.id === 'granite') this.ball.vx *= -1;
           this.shake = 14;
-          this.spawnBurst(this.ball.x, this.ball.y, actor.character.fxColor, 14, 220);
+          this.spawnBurst(this.ball.x, this.ball.y, actor.character.fxColor, 22, 260, 'spark');
+          this.postEvent('Special impact!', 1);
           this.game.audio.play('spikeHit');
         } else {
-          this.spawnBurst(this.ball.x, this.ball.y, '#f0f6ff', 7, 120);
-          this.game.audio.play('serve');
+          this.spawnBurst(this.ball.x, this.ball.y, strong ? '#ffddaa' : '#f0f6ff', strong ? 12 : 7, strong ? 180 : 120, 'spark');
+          this.postEvent(strong ? 'Power spike!' : 'Clean touch', 0.55);
+          this.game.audio.play(strong ? 'spikeHit' : 'serve');
         }
 
         actor.triggerHitPose();
-        actor.gainEnergy(10);
+        actor.gainEnergy(strong ? 12 : 10);
         actor.touches += 1;
         this.stats.spikes += 1;
         this.rally += 1;
-        this.hitStop = this.rally > 6 ? 0.017 : 0.012;
+        this.hitStop = this.rally > 6 ? 0.02 : 0.012;
       }
     };
 
@@ -163,9 +204,11 @@ export class MatchScene {
     if (Math.abs(this.ball.x - this.net.x) < this.net.width / 2 + this.ball.radius && this.ball.y > topY - 10) {
       this.ball.vx *= -0.83;
       this.ball.x += Math.sign(this.ball.vx) * 6;
-      this.spawnBurst(this.net.x, this.ball.y, '#d8efff', 6, 90);
+      this.spawnBurst(this.net.x, this.ball.y, '#d8efff', 9, 120, 'spark');
       this.player.triggerBlockPose();
       this.ai.triggerBlockPose();
+      this.shake = 6;
+      this.postEvent('Net block!', 0.7);
       this.game.audio.play('block');
     }
   }
@@ -174,28 +217,38 @@ export class MatchScene {
     if (playerScored) this.playerScore += 1;
     else this.aiScore += 1;
     this.rally = 0;
-    this.celebrate = 0.45;
+    this.celebrate = 0.55;
     this.game.audio.play('score');
+
+    const clutch = Math.max(this.playerScore, this.aiScore) === 4;
+    if (clutch) {
+      this.postEvent('Match point pressure!', 1.2);
+      this.shake = 10;
+    }
 
     if (this.playerScore >= 5 || this.aiScore >= 5) {
       const won = this.playerScore > this.aiScore;
+      const beforeTrophies = this.game.save.profile.trophies;
       if (this.modeRanked) {
         this.game.progression.onMatchResult({ won, spikes: this.stats.spikes, specials: this.stats.specials });
       }
+      const trophyDelta = this.game.save.profile.trophies - beforeTrophies;
       this.game.save.currencies.packs += won ? 1 : 0;
       this.game.save.lastReward = won ? 'Win bonus: +1 capsule' : 'Match bonus: +30 coins';
       this.roundOver = true;
       this.player.setResultPose(won);
       this.ai.setResultPose(!won);
       this.game.audio.play(won ? 'victory' : 'defeat');
-      this.game.ui.showResultBanner(won);
+      this.game.ui.showResultBanner(won, { trophies: trophyDelta, spikes: this.stats.spikes, specials: this.stats.specials });
       this.game.ui.toast(won ? 'Crowd goes wild!' : 'Reset and run it back');
-      setTimeout(() => this.game.changeScene('menu'), 1300);
+      setTimeout(() => this.game.changeScene('menu'), 1700);
       return;
     }
 
     this.ball = new Ball(playerScored ? 180 : 540, 820);
     this.ball.serve(playerScored);
+    this.serveFlash = 0.35;
+    this.postEvent('Serve restart', 0.65);
     this.game.audio.play('serve');
     this.player.reset(170);
     this.ai.reset(540);
@@ -237,9 +290,19 @@ export class MatchScene {
     this.ball.draw(ctx);
 
     this.particles.forEach((p) => {
-      ctx.globalAlpha = Math.max(0, p.life * 2.2);
-      ctx.fillStyle = p.color;
-      ctx.fillRect(p.x, p.y, 4, 4);
+      const alpha = Math.max(0, p.life * (p.style === 'spark' ? 2.4 : 1.9));
+      ctx.globalAlpha = alpha;
+      if (p.style === 'dust') {
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x - 5, p.y - 2, 10, 4);
+      } else if (p.style === 'ring') {
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(p.x - 2, p.y - 2, 5, 5);
+      } else {
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, 4, 4);
+      }
       ctx.globalAlpha = 1;
     });
 
@@ -250,9 +313,14 @@ export class MatchScene {
       ctx.fillRect(0, 220, this.game.width, 14);
     }
 
+    if (this.serveFlash > 0) {
+      ctx.fillStyle = `rgba(150,215,255,${this.serveFlash * 0.35})`;
+      ctx.fillRect(0, 0, this.game.width, this.game.height);
+    }
+
     ctx.fillStyle = '#ffe2a3';
     ctx.font = '14px "Press Start 2P"';
-    const tension = this.rally > 6 ? 'Hot Rally!' : ' '; 
+    const tension = this.rally > 6 ? 'Hot Rally!' : this.player.specialReady ? 'Special Ready!' : ' ';
     ctx.fillText(tension, 24, 100);
   }
 }

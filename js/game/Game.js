@@ -32,6 +32,7 @@ export class Game {
     this.progression.ensureMissions();
 
     this.tutorialStep = 0;
+    this.isPaused = false;
     this.scenes = {
       boot: new BootScene(this),
       menu: new MenuScene(this),
@@ -54,7 +55,7 @@ export class Game {
   loop = (now) => {
     const dt = Math.min(0.033, (now - this.last) / 1000);
     this.last = now;
-    this.currentScene.update(dt);
+    if (!this.isPaused) this.currentScene.update(dt);
     this.currentScene.render(this.ctx);
     requestAnimationFrame(this.loop);
   };
@@ -64,6 +65,7 @@ export class Game {
   }
 
   changeScene(key, ...args) {
+    this.isPaused = false;
     this.currentScene = this.scenes[key];
     this.currentScene.enter?.(...args);
     this.persist();
@@ -173,6 +175,7 @@ export class Game {
   finishTutorial() {
     this.save.tutorialDone = true;
     this.tutorialStep = 0;
+    this.isPaused = false;
     this.ui.renderTutorial(0, true);
     setTimeout(() => this.changeScene('menu'), 600);
   }
@@ -297,6 +300,19 @@ export class Game {
     ctx.font = '700 11px Inter';
     ctx.fillText(`${hero.role} • ${hero.rarity}`, -116, -78);
     ctx.restore();
+  }
+
+
+  togglePause() {
+    if (this.currentScene !== this.scenes.match) return;
+    this.isPaused = !this.isPaused;
+    if (this.isPaused) this.ui.showPauseMenu();
+    else this.ui.renderMatchHUD(this.currentScene.hudState());
+  }
+
+  quitMatchToMenu() {
+    this.isPaused = false;
+    this.changeScene('menu');
   }
 
   persist() {

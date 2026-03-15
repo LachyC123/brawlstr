@@ -28,8 +28,9 @@ export class Ball {
       this.vy += 290 * dt;
     }
 
-    this.trail.push({ x: this.x, y: this.y, a: 1, r: this.radius * (0.5 + Math.random() * 0.5) });
-    if (this.trail.length > 12) this.trail.shift();
+    const speed = Math.hypot(this.vx, this.vy);
+    this.trail.push({ x: this.x, y: this.y, a: 1, r: this.radius * (0.5 + Math.random() * 0.5), speed });
+    if (this.trail.length > 16) this.trail.shift();
     this.trail.forEach((t) => {
       t.a *= 0.84;
     });
@@ -37,17 +38,27 @@ export class Ball {
 
   draw(ctx) {
     this.trail.forEach((t) => {
+      const intense = Math.min(1, t.speed / 1100);
       ctx.fillStyle = this.ignite > 0
-        ? `rgba(255, 172, 120, ${t.a * 0.42})`
-        : `rgba(243, 249, 255, ${t.a * 0.36})`;
+        ? `rgba(255, 162, 98, ${t.a * (0.32 + intense * 0.4)})`
+        : `rgba(243, 249, 255, ${t.a * (0.26 + intense * 0.35)})`;
       ctx.beginPath();
-      ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
+      ctx.arc(t.x, t.y, t.r + intense * 2, 0, Math.PI * 2);
       ctx.fill();
     });
 
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.spin);
+    if (Math.abs(this.vx) > 760 || this.ignite > 0) {
+      ctx.strokeStyle = this.ignite > 0 ? 'rgba(255,154,100,.5)' : 'rgba(210,235,255,.45)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-this.vx * 0.012, -this.vy * 0.012);
+      ctx.lineTo(-this.vx * 0.028, -this.vy * 0.028);
+      ctx.stroke();
+    }
+
     ctx.fillStyle = this.ignite > 0 ? '#ff9f6a' : '#fff5cb';
     ctx.beginPath();
     ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
