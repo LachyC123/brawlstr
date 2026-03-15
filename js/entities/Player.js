@@ -237,6 +237,12 @@ export class Player {
       ctx.strokeRect(-31, -87, 62, 83);
     }
 
+    if (this.specialReady && this.specialTimer <= 0) {
+      ctx.strokeStyle = 'rgba(255,223,147,0.55)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-33, -92, 66, 88);
+    }
+
     ctx.translate(pose.lean, 0);
     ctx.scale(pose.torsoScaleX, pose.torsoScaleY);
 
