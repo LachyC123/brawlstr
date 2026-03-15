@@ -340,6 +340,119 @@ export class UIManager {
     setTimeout(() => shell.remove(), 1800);
   }
 
+
+  renderMatchmaking({ modeLabel, arenaLabel, status }) {
+    this.clear();
+    const wrap = document.createElement('div');
+    wrap.className = 'flow-overlay matchmaking';
+    wrap.innerHTML = `
+      <div class="flow-bg"></div>
+      <div class="flow-panel">
+        <div class="subtitle">${modeLabel}</div>
+        <div class="title">MATCHMAKING</div>
+        <div class="flow-status">${status}</div>
+        <div class="flow-meta">${arenaLabel} • Region Auto</div>
+        <div class="scan-line"></div>
+      </div>
+    `;
+    this.layer.append(wrap);
+  }
+
+  renderVersusScreen(context) {
+    this.clear();
+    const wrap = document.createElement('div');
+    wrap.className = 'flow-overlay versus';
+    wrap.innerHTML = `
+      <div class="flow-bg glow"></div>
+      <div class="versus-label">${context.modeLabel} • ${context.arenaLabel}</div>
+      <div class="versus-shell">
+        <section class="versus-card player">
+          <div class="subtitle">Player</div>
+          <canvas class="portrait big" width="92" height="92"></canvas>
+          <div class="versus-name">${context.player.name}</div>
+          <div class="versus-meta">🏆 ${context.player.trophies}</div>
+          <div class="versus-char">${context.player.character.name}</div>
+        </section>
+        <div class="versus-core">VS</div>
+        <section class="versus-card enemy">
+          <div class="subtitle">Opponent Found</div>
+          <canvas class="portrait big" width="92" height="92"></canvas>
+          <div class="versus-name">${context.opponent.name}</div>
+          <div class="versus-meta">🏆 ${context.opponent.trophies}</div>
+          <div class="versus-char">${context.opponent.character.name}</div>
+        </section>
+      </div>
+    `;
+    this.layer.append(wrap);
+    const portraits = wrap.querySelectorAll('canvas');
+    this.drawPortrait(portraits[0], context.player.character);
+    this.drawPortrait(portraits[1], context.opponent.character);
+  }
+
+  renderResultsScreen(payload) {
+    this.clear();
+    const shell = document.createElement('div');
+    shell.className = 'flow-overlay results';
+    const signed = payload.trophyDelta >= 0 ? `+${payload.trophyDelta}` : `${payload.trophyDelta}`;
+    const positive = payload.trophyDelta >= 0;
+    const milestoneItems = payload.roadProgress.crossedMilestones || [];
+
+    shell.innerHTML = `
+      <div class="flow-bg"></div>
+      <div class="results-shell ${payload.won ? 'win' : 'lose'}">
+        <div class="subtitle">${payload.ranked ? 'Trophy Match Complete' : 'Casual Match Complete'}</div>
+        <div class="results-headline">${payload.won ? 'VICTORY' : 'DEFEAT'}</div>
+        <div class="scoreline">${payload.playerScore} - ${payload.aiScore}</div>
+
+        <section class="trophy-delta ${positive ? 'up' : 'down'}">
+          <div class="subtitle">Trophy Change</div>
+          <div class="delta-value">🏆 <span id="deltaVal">${signed}</span></div>
+          <div class="trophy-total"><span id="oldTrophy">${payload.beforeTrophies}</span> → <span id="newTrophy">${payload.afterTrophies}</span></div>
+        </section>
+
+        <section class="road-progress">
+          <div class="subtitle">Road Progress</div>
+          <div class="bar"><div class="bar-fill" style="width:${payload.roadProgress.progress}%"></div></div>
+          <div class="road-meta">Next milestone: ${payload.roadProgress.nextMilestone?.trophies ?? payload.afterTrophies} 🏆</div>
+        </section>
+
+        <section class="result-rewards">
+          <div class="reward-chip">Coins +${payload.earnedCoins}</div>
+          <div class="reward-chip">${payload.matchBonus.label}</div>
+          ${milestoneItems.length ? `<div class="reward-unlock">Milestones crossed: ${milestoneItems.map((m) => `${m.trophies}🏆`).join(', ')}</div>` : '<div class="road-meta">No new milestone this match.</div>'}
+        </section>
+
+        <div class="btn-row two">
+          <button type="button" class="main-btn" id="rematchBtn">Rematch</button>
+          <button type="button" class="main-btn alt" id="homeBtn">Home</button>
+        </div>
+      </div>
+    `;
+    this.layer.append(shell);
+
+    const rematchBtn = shell.querySelector('#rematchBtn');
+    const homeBtn = shell.querySelector('#homeBtn');
+    rematchBtn.addEventListener('click', () => this.game.startMatch(payload.ranked));
+    homeBtn.addEventListener('click', () => this.game.changeScene('menu'));
+
+    const oldNode = shell.querySelector('#oldTrophy');
+    const newNode = shell.querySelector('#newTrophy');
+    const start = payload.beforeTrophies;
+    const end = payload.afterTrophies;
+    const startTs = performance.now();
+    const animate = (ts) => {
+      const p = Math.min(1, (ts - startTs) / 850);
+      const eased = 1 - (1 - p) ** 3;
+      const curr = Math.round(start + (end - start) * eased);
+      oldNode.textContent = start;
+      newNode.textContent = curr;
+      if (p < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+
+    if (milestoneItems.length) this.game.audio.play('trophyMilestone');
+  }
+
   toast(text) {
     const t = document.createElement('div');
     t.className = 'toast';

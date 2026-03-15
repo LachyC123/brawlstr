@@ -1,4 +1,5 @@
 import { TROPHY_ROAD } from '../data/trophyRoad.js';
+import { CONFIG } from '../config.js';
 
 export class ProgressionSystem {
   constructor(saveData, characterSystem) {
@@ -18,12 +19,38 @@ export class ProgressionSystem {
     }
   }
 
-  onMatchResult({ won, spikes, specials }) {
-    this.saveData.profile.trophies = Math.max(0, this.saveData.profile.trophies + (won ? 9 : -5));
+  onMatchResult({ won, spikes, specials, trophyModifier = 0 }) {
+    const baseGain = CONFIG.progression.baseWinTrophies;
+    const baseLoss = CONFIG.progression.baseLossTrophies;
+    const delta = won ? baseGain + trophyModifier : -(baseLoss + Math.max(0, trophyModifier));
+    this.saveData.profile.trophies = Math.max(0, this.saveData.profile.trophies + delta);
     this.saveData.currencies.coins += won ? 60 : 30;
     this.trackMission('win3', won ? 1 : 0);
     this.trackMission('spike10', spikes);
     this.trackMission('special5', specials);
+    return delta;
+  }
+
+  evaluateRoadProgress(previousTrophies, newTrophies) {
+    const direction = newTrophies >= previousTrophies ? 1 : -1;
+    const crossedMilestones = TROPHY_ROAD
+      .map((node, index) => ({ ...node, index }))
+      .filter((node) => {
+        if (direction > 0) return node.trophies > previousTrophies && node.trophies <= newTrophies;
+        return node.trophies <= previousTrophies && node.trophies > newTrophies;
+      });
+
+    const nextMilestone = TROPHY_ROAD.find((node) => node.trophies > newTrophies) || TROPHY_ROAD[TROPHY_ROAD.length - 1];
+    const previousMilestone = [...TROPHY_ROAD].reverse().find((node) => node.trophies <= newTrophies) || TROPHY_ROAD[0];
+    const span = Math.max(1, (nextMilestone?.trophies || newTrophies + 1) - previousMilestone.trophies);
+    const progress = ((newTrophies - previousMilestone.trophies) / span) * 100;
+
+    return {
+      crossedMilestones,
+      nextMilestone,
+      previousMilestone,
+      progress: Math.max(0, Math.min(100, progress)),
+    };
   }
 
   trackMission(id, amount) {

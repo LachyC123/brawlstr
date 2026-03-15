@@ -2,6 +2,9 @@ import { CONFIG } from '../config.js';
 import { BootScene } from './scenes/BootScene.js';
 import { MenuScene } from './scenes/MenuScene.js';
 import { MatchScene } from './scenes/MatchScene.js';
+import { MatchmakingScene } from './scenes/MatchmakingScene.js';
+import { VersusScene } from './scenes/VersusScene.js';
+import { ResultsScene } from './scenes/ResultsScene.js';
 import { TrophyRoadScene } from './scenes/TrophyRoadScene.js';
 import { RosterScene } from './scenes/RosterScene.js';
 import { RewardsScene } from './scenes/RewardsScene.js';
@@ -36,7 +39,10 @@ export class Game {
     this.scenes = {
       boot: new BootScene(this),
       menu: new MenuScene(this),
+      matchmaking: new MatchmakingScene(this),
+      versus: new VersusScene(this),
       match: new MatchScene(this),
+      results: new ResultsScene(this),
       road: new TrophyRoadScene(this),
       roster: new RosterScene(this),
       rewards: new RewardsScene(this),
@@ -72,7 +78,39 @@ export class Game {
   }
 
   startMatch(ranked) {
-    this.changeScene('match', ranked);
+    const playerChar = this.characterSystem.get(this.save.profile.selectedCharacter);
+    const roster = this.characterSystem.list();
+    const opponentChar = roster[(Math.random() * roster.length) | 0];
+    const pool = ['Sky Rival', 'Volley Viper', 'Ace Nova', 'Net Phantom', 'Arena Lynx', 'Spike Baron'];
+    const opponentName = `${pool[(Math.random() * pool.length) | 0]} ${(Math.random() * 89 + 10) | 0}`;
+    const opponentTrophies = Math.max(0, this.save.profile.trophies + (((Math.random() * 40) | 0) - 20));
+
+    this.pendingMatch = {
+      ranked,
+      modeLabel: ranked ? 'Trophy Match' : 'Casual Match',
+      arenaLabel: 'Skycourt Arena',
+      player: {
+        name: this.save.profile.name,
+        trophies: this.save.profile.trophies,
+        character: playerChar,
+      },
+      opponent: {
+        name: opponentName,
+        trophies: opponentTrophies,
+        character: opponentChar,
+      },
+    };
+
+    this.changeScene('matchmaking', this.pendingMatch);
+  }
+
+  launchMatchFromFlow(context) {
+    this.pendingMatch = context;
+    this.changeScene('match', context.ranked, context);
+  }
+
+  showMatchResults(payload) {
+    this.changeScene('results', payload);
   }
 
   getMenuData() {

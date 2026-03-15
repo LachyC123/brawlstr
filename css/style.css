@@ -247,3 +247,107 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
   .ctrl { height: 56px; }
   .special-meter { top: 84px; }
 }
+
+.flow-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.flow-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 20%, rgba(104, 190, 255, 0.28), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(255, 173, 109, 0.2), transparent 44%),
+    linear-gradient(170deg, rgba(8, 20, 55, 0.88), rgba(5, 11, 33, 0.94));
+  animation: panBg 10s linear infinite;
+}
+
+.flow-bg.glow { animation: pulseGlow 1.3s ease-in-out infinite; }
+
+.flow-panel {
+  position: relative;
+  width: min(90%, 420px);
+  padding: 22px;
+  border-radius: 18px;
+  border: 3px solid #8fc0ff;
+  background: linear-gradient(180deg, rgba(34, 53, 106, 0.96), rgba(17, 27, 62, 0.96));
+  text-align: center;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.4);
+}
+
+.flow-status { margin-top: 12px; font-size: 20px; font-weight: 900; color: #fff2c5; }
+.flow-meta { margin-top: 8px; color: #c9ddff; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.scan-line { height: 4px; margin-top: 16px; border-radius: 2px; background: linear-gradient(90deg, transparent, #93d0ff, transparent); animation: scanMove 1.4s linear infinite; }
+
+.versus-label { position: absolute; top: 80px; font-size: 12px; letter-spacing: .08em; color: #dbebff; text-transform: uppercase; }
+.versus-shell {
+  position: relative;
+  z-index: 1;
+  width: min(96%, 640px);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: center;
+}
+.versus-card {
+  border-radius: 16px;
+  border: 3px solid #9ac8ff;
+  background: linear-gradient(180deg, rgba(41, 64, 120, 0.95), rgba(20, 33, 73, 0.96));
+  padding: 14px;
+  text-align: center;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  animation: panelSlide .45s cubic-bezier(.22,.95,.36,1) both;
+}
+.versus-card.enemy { animation-name: panelSlideRight; }
+.versus-core {
+  font-family: 'Press Start 2P', cursive;
+  font-size: clamp(32px, 8vw, 56px);
+  color: #fff3b6;
+  text-shadow: 0 0 20px rgba(255, 198, 107, 0.55);
+  animation: vsPop .5s ease-out both;
+}
+.versus-name { font-size: 16px; font-weight: 900; margin-top: 8px; }
+.versus-meta { font-size: 12px; color: #ffe6ac; margin-top: 4px; }
+.versus-char { font-size: 12px; color: #cbe3ff; margin-top: 4px; }
+
+.results-shell {
+  position: relative;
+  width: min(92%, 460px);
+  border-radius: 20px;
+  border: 3px solid #92beff;
+  background: linear-gradient(180deg, rgba(35, 58, 114, 0.97), rgba(16, 28, 65, 0.97));
+  padding: 18px;
+  display: grid;
+  gap: 10px;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.4);
+  animation: screenIn .36s ease;
+}
+.results-shell.win { border-color: #ffe099; }
+.results-shell.lose { border-color: #b7c2eb; }
+.results-headline { font-family: 'Press Start 2P', cursive; font-size: 24px; color: #fff4c7; text-align: center; }
+.scoreline { text-align: center; font-size: 18px; font-weight: 900; color: #dcecff; }
+.trophy-delta, .road-progress, .result-rewards {
+  border: 2px solid rgba(152, 200, 255, 0.45);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(6, 14, 38, 0.45);
+}
+.delta-value { margin-top: 4px; font-size: 30px; font-weight: 900; text-align: center; }
+.trophy-delta.up .delta-value { color: #b5ffd0; }
+.trophy-delta.down .delta-value { color: #ffc1cf; }
+.trophy-total { text-align: center; color: #d6e8ff; font-size: 13px; }
+.bar { margin-top: 7px; height: 12px; border-radius: 8px; overflow: hidden; background: rgba(149, 186, 236, 0.2); }
+.bar-fill { height: 100%; background: linear-gradient(90deg, #62cbff, #8efdd1, #ffe292); transition: width .9s cubic-bezier(.2,.92,.39,.99); }
+.road-meta { margin-top: 6px; font-size: 11px; color: #c8dbff; }
+.result-rewards { display: grid; gap: 7px; }
+.reward-chip { border-radius: 8px; padding: 7px; text-align: center; background: rgba(84, 126, 210, 0.32); font-weight: 800; }
+.reward-unlock { border: 2px solid #ffd691; color: #fff2cb; border-radius: 8px; padding: 8px; text-align: center; font-size: 12px; }
+
+@keyframes panelSlide { from { transform: translateX(-40px) scale(.94); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
+@keyframes panelSlideRight { from { transform: translateX(40px) scale(.94); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
+@keyframes vsPop { from { transform: scale(.75); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes scanMove { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
