@@ -248,9 +248,9 @@ a,
   align-items: center;
 }
 
-.portrait {
-  width: 58px;
-  height: 58px;
+ .portrait {
+  width: 64px;
+  height: 64px;
   image-rendering: pixelated;
   border-radius: 9px;
   background: #0f1d42;
@@ -271,7 +271,7 @@ a,
   border-radius: 12px;
   padding: 8px;
   display: grid;
-  grid-template-columns: 58px 1fr;
+  grid-template-columns: 64px 1fr;
   gap: 8px;
 }
 
@@ -332,8 +332,8 @@ a,
 }
 
 .reward-core {
-  width: 120px;
-  height: 120px;
+  width: 128px;
+  height: 128px;
   border-radius: 18px;
   border: 3px solid #ffe2a5;
   background: radial-gradient(circle at 50% 20%, #ffe9b3, #eb9a4f 50%, #7c3e20 100%);
@@ -477,4 +477,65 @@ a,
   .screen { padding: 14px; }
   .main-btn { min-height: 50px; font-size: 13px; }
   .ctrl { height: 58px; }
+}
+
+
+.audio-toggle {
+  margin-top: 6px;
+  border: 2px solid #9fd1ff;
+  border-radius: 9px;
+  color: #f2f9ff;
+  background: linear-gradient(180deg, #345a9a, #253f73);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 8px;
+}
+
+.audio-toggle.on { border-color: #aefec3; }
+.audio-toggle.off { border-color: #8ba2cb; filter: saturate(0.6); }
+
+.char-name { font-weight: 900; letter-spacing: 0.01em; }
+
+.ability-icons {
+  margin-top: 5px;
+  display: flex;
+  gap: 6px;
+  font-size: 10px;
+  color: #dceaff;
+}
+
+.ability-icons span {
+  background: rgba(11, 24, 55, 0.5);
+  border: 1px solid rgba(143, 191, 255, 0.4);
+  border-radius: 8px;
+  padding: 3px 5px;
+}
+
+.char-card.rarity-epic { border-color: #cf9dff; box-shadow: inset 0 0 0 1px rgba(216,175,255,0.35); }
+.char-card.rarity-rare { border-color: #7fceff; box-shadow: inset 0 0 0 1px rgba(146,214,255,0.32); }
+.char-card.rarity-common { border-color: #a9bdd7; }
+
+.reward-glow {
+  width: 170px;
+  height: 24px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,220,120,0.5), rgba(255,220,120,0));
+  margin-top: -12px;
+}
+
+.reward-copy {
+  font-size: 15px;
+  font-weight: 800;
+  max-width: 84%;
+  text-shadow: 0 2px 0 rgba(25,16,8,0.5);
+}
+
+.results-banner.win {
+  border-color: #ffe79f;
+  box-shadow: 0 0 0 2px rgba(255, 242, 184, 0.3), 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.results-banner.lose {
+  border-color: #b9c4e8;
+  box-shadow: 0 0 0 2px rgba(168, 184, 232, 0.22), 0 10px 24px rgba(0, 0, 0, 0.35);
 }

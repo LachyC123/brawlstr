@@ -21,9 +21,11 @@ export class Game {
     this.height = CONFIG.game.height;
     this.saveManager = new SaveManager();
     this.save = this.saveManager.load();
+    this.save.settings = this.save.settings || { audio: { sfxEnabled: true } };
+    this.save.settings.audio = this.save.settings.audio || { sfxEnabled: true };
 
     this.input = new InputManager(canvas, uiLayer);
-    this.audio = new AudioManager();
+    this.audio = new AudioManager({ enabled: this.save.settings.audio.sfxEnabled });
     this.ui = new UIManager(uiLayer, this);
     this.characterSystem = new CharacterSystem(this.save);
     this.progression = new ProgressionSystem(this.save, this.characterSystem);
@@ -77,18 +79,27 @@ export class Game {
       currencies: this.save.currencies,
       missions: this.save.missions,
       selected: this.characterSystem.get(this.save.profile.selectedCharacter),
+      sfxEnabled: this.save.settings.audio.sfxEnabled,
     };
+  }
+
+  setSfxEnabled(enabled) {
+    this.save.settings.audio.sfxEnabled = enabled;
+    this.audio.setEnabled(enabled);
+    this.ui.toast(enabled ? 'SFX On' : 'SFX Off');
+    this.changeScene('menu');
   }
 
   selectCharacter(id) {
     if (!this.save.unlocks.includes(id)) return;
     this.save.profile.selectedCharacter = id;
+    this.audio.play('menuConfirm');
     this.changeScene('roster');
   }
 
   upgradeCharacter(id) {
     if (this.characterSystem.upgrade(id)) {
-      this.audio.play('reward');
+      this.audio.play('coinGain');
       this.ui.toast('Upgrade complete');
       this.changeScene('roster');
     } else {
@@ -98,7 +109,7 @@ export class Game {
 
   claimMission(id) {
     if (this.progression.claimMission(id)) {
-      this.audio.play('reward');
+      this.audio.play('rewardReveal');
       this.ui.toast('Mission reward claimed');
       this.changeScene('menu');
     }
@@ -107,7 +118,7 @@ export class Game {
   claimRoad(index) {
     const reward = this.progression.claimRoad(index);
     if (!reward) return;
-    this.audio.play('trophy');
+    this.audio.play('trophyMilestone');
     this.ui.toast('Path reward collected');
     this.changeScene('road');
   }
@@ -117,7 +128,10 @@ export class Game {
     this.save.currencies.packs -= 1;
     const r = this.rollPackReward();
 
-    if (r.type === 'coins') this.save.currencies.coins += r.amount;
+    if (r.type === 'coins') {
+      this.save.currencies.coins += r.amount;
+      this.audio.play('coinGain');
+    }
     if (r.type === 'gems') this.save.currencies.gems += r.amount;
 
     if (r.type === 'shards') {
@@ -125,13 +139,13 @@ export class Game {
       const locked = chars.find((c) => !c.unlocked) || chars[0];
       const unlocked = this.characterSystem.addShards(locked.id, r.amount);
       this.save.lastReward = `${r.amount} shards for ${locked.name}${unlocked ? ' • Unlock!' : ''}`;
-      this.audio.play('reward');
+      this.audio.play('rewardReveal');
       this.changeScene('rewards');
       return;
     }
 
     this.save.lastReward = `${r.amount} ${r.type}`;
-    this.audio.play('reward');
+    this.audio.play('rewardReveal');
     this.changeScene('rewards');
   }
 
@@ -166,40 +180,55 @@ export class Game {
   drawArenaBackdrop(ctx, intensity = 1) {
     const t = performance.now() * 0.001;
     const gradient = ctx.createLinearGradient(0, 0, 0, this.height);
-    gradient.addColorStop(0, '#335fae');
-    gradient.addColorStop(0.4, '#1c346f');
-    gradient.addColorStop(1, '#0d1737');
+    gradient.addColorStop(0, '#345ca6');
+    gradient.addColorStop(0.35, '#1b3064');
+    gradient.addColorStop(1, '#0b1330');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, this.width, this.height);
 
-    ctx.fillStyle = '#93c6ff';
-    for (let i = 0; i < 4; i += 1) {
-      const x = 40 + i * 180 + Math.sin(t + i) * 5;
-      const y = 120 + i * 45;
-      ctx.fillRect(x, y, 70, 6);
-      ctx.fillRect(x + 20, y - 8, 56, 6);
+    for (let i = 0; i < 8; i += 1) {
+      const alpha = 0.15 + Math.sin(t * 1.5 + i) * 0.05;
+      ctx.fillStyle = `rgba(173,208,255,${alpha * intensity})`;
+      ctx.fillRect(40 + i * 90, 90 + (i % 2) * 35, 70, 8);
     }
 
     ctx.fillStyle = '#274883';
-    for (let i = 0; i < 6; i += 1) {
-      const y = 248 + i * 70;
-      ctx.fillRect(0, y, this.width, 38);
+    for (let i = 0; i < 6; i += 1) ctx.fillRect(0, 248 + i * 70, this.width, 38);
+
+    for (let i = 0; i < 36; i += 1) {
+      const sway = Math.sin(i * 0.8 + t * 2.2) * 4;
+      ctx.fillStyle = i % 3 === 0 ? '#16284f' : '#1d3567';
+      ctx.fillRect(i * 20, 770 + sway, 16, 46);
+      ctx.fillStyle = 'rgba(243, 203, 112, 0.25)';
+      ctx.fillRect(i * 20 + 5, 758 + sway * 0.4, 6, 6);
     }
 
-    ctx.fillStyle = '#1a2f5e';
-    for (let i = 0; i < 32; i += 1) {
-      const sway = Math.sin(i * 0.8 + t * 2.2) * 4;
-      ctx.fillRect(i * 24, 780 + sway, 18, 34);
+    for (let i = 0; i < 7; i += 1) {
+      const bx = 34 + i * 102;
+      const wave = Math.sin(t * 2 + i) * 6;
+      ctx.fillStyle = '#d5545f';
+      ctx.fillRect(bx, 666 + wave, 50, 8);
+      ctx.fillStyle = '#ffd7a5';
+      ctx.fillRect(bx + 4, 674 + wave, 20, 4);
+      ctx.fillStyle = '#86b9ff';
+      ctx.fillRect(bx + 26, 674 + wave, 20, 4);
     }
 
     ctx.fillStyle = '#355d9f';
     ctx.fillRect(0, 915, this.width, 210);
 
-    ctx.fillStyle = '#75b6ff';
-    for (let i = 0; i < 16; i += 1) {
-      const width = 22;
-      const h = 6 + ((i % 3) * 2);
-      ctx.fillRect(i * 48, 960 + Math.sin(t * 3 + i) * intensity * 4, width, h);
+    ctx.strokeStyle = 'rgba(193,225,255,0.4)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 8; i += 1) {
+      ctx.beginPath();
+      ctx.moveTo(0, 940 + i * 20);
+      ctx.lineTo(this.width, 940 + i * 20 + Math.sin(t + i) * 4);
+      ctx.stroke();
+    }
+
+    for (let i = 0; i < 20; i += 1) {
+      ctx.fillStyle = `rgba(255,255,255,${0.08 + (i % 2) * 0.04})`;
+      ctx.fillRect(24 + i * 34, 970 + Math.sin(t * 3 + i) * intensity * 5, 10, 10);
     }
 
     ctx.fillStyle = `rgba(255, 220, 130, ${0.55 * intensity})`;
@@ -207,28 +236,66 @@ export class Game {
     ctx.fillRect(0, 188, this.width * pulse, 6);
   }
 
+  drawCharacterSprite(ctx, hero, x, y, scale = 1.8) {
+    const v = hero.visuals;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+
+    const px = (x0, y0, w, h, color) => {
+      ctx.fillStyle = v.outline;
+      ctx.fillRect(x0 - 1, y0 - 1, w + 2, h + 2);
+      ctx.fillStyle = color;
+      ctx.fillRect(x0, y0, w, h);
+    };
+
+    px(-10, -16, 9, 12, v.legs);
+    px(2, -16, 9, 12, v.legs);
+    px(-10, -4, 9, 5, v.shoes);
+    px(2, -4, 9, 5, v.shoes);
+    px(-15, -52, 30, 36, v.torso);
+    px(-20, -50, 8, 22, v.shoulder);
+    px(12, -50, 8, 22, v.shoulder);
+    px(-20, -32, 8, 6, v.gloves);
+    px(12, -32, 8, 6, v.gloves);
+    px(-12, -68, 24, 18, v.skin);
+    px(-15, -76, 30, 8, v.hair);
+    px(-7, -80, 14, 4, v.headgear);
+    px(-3, -42, 6, 10, v.band);
+
+    ctx.fillStyle = v.band;
+    ctx.font = 'bold 8px Inter';
+    ctx.fillText(v.emblem, -3, -35);
+    ctx.restore();
+  }
+
   drawHeroShowcase(ctx) {
     const hero = this.characterSystem.get(this.save.profile.selectedCharacter);
     const t = performance.now() * 0.0025;
     const bob = Math.sin(t) * 4;
     ctx.save();
-    ctx.translate(360, 878 + bob);
+    ctx.translate(360, 880 + bob);
 
     ctx.fillStyle = '#0f1f49';
-    ctx.fillRect(-138, -236, 276, 248);
-    ctx.fillStyle = 'rgba(125, 170, 255, 0.35)';
-    ctx.fillRect(-132, -230, 264, 12);
+    ctx.fillRect(-146, -242, 292, 262);
+    const cg = ctx.createLinearGradient(-120, -220, 120, -20);
+    cg.addColorStop(0, hero.cardGradient[0]);
+    cg.addColorStop(1, hero.cardGradient[1]);
+    ctx.fillStyle = cg;
+    ctx.fillRect(-136, -232, 272, 230);
+    ctx.fillStyle = 'rgba(214,232,255,0.2)';
+    ctx.fillRect(-136, -232, 272, 18);
 
-    ctx.fillStyle = hero.color;
-    ctx.fillRect(-58, -170, 116, 144);
-    ctx.fillStyle = '#ffedcb';
-    ctx.fillRect(-40, -214, 80, 48);
-    ctx.fillStyle = '#121a3a';
-    ctx.fillRect(-22, -196, 10, 8);
-    ctx.fillRect(12, -196, 10, 8);
+    this.drawCharacterSprite(ctx, hero, 0, -18, 3.6);
 
-    ctx.fillStyle = 'rgba(255, 250, 200, 0.4)';
-    ctx.fillRect(70, -210, 14, 150);
+    ctx.fillStyle = hero.fxColor;
+    ctx.fillRect(-114, -46, 228, 4);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 16px Inter';
+    ctx.fillText(hero.name, -116, -58);
+    ctx.fillStyle = '#d2e5ff';
+    ctx.font = '700 11px Inter';
+    ctx.fillText(`${hero.role} • ${hero.rarity}`, -116, -78);
     ctx.restore();
   }
 

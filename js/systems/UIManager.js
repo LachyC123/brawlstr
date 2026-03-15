@@ -17,7 +17,7 @@ export class UIManager {
     b.addEventListener('pointerup', () => b.classList.remove('pressed'));
     b.addEventListener('pointercancel', () => b.classList.remove('pressed'));
     b.addEventListener('click', () => {
-      this.game.audio.play('click');
+      this.game.audio.play('uiTap');
       onClick();
     });
     return b;
@@ -44,6 +44,7 @@ export class UIManager {
         <div style="text-align:right;">
           <div class="subtitle">Current Brawler</div>
           <div style="font-weight:800;">${data.selected?.name}</div>
+          <button type="button" class="audio-toggle ${data.sfxEnabled ? 'on' : 'off'}">SFX ${data.sfxEnabled ? 'ON' : 'OFF'}</button>
         </div>
       </div>
       <div class="btn-row two" id="row-a"></div>
@@ -51,6 +52,11 @@ export class UIManager {
       <div class="btn-row two" id="row-c"></div>
       <div class="panel" id="mission-panel"></div>
     `;
+
+    wrap.querySelector('.audio-toggle').addEventListener('click', () => {
+      this.game.audio.play('menuConfirm');
+      this.game.setSfxEnabled(!data.sfxEnabled);
+    });
 
     wrap.querySelector('#row-a').append(
       this.button('Play Casual', () => this.game.startMatch(false)),
@@ -102,12 +108,13 @@ export class UIManager {
     const grid = wrap.querySelector('.card-grid');
     chars.forEach((c) => {
       const card = document.createElement('div');
-      card.className = `char-card ${c.id === selectedId ? 'selected' : ''}`;
-      card.innerHTML = `<canvas class="portrait" width="58" height="58"></canvas>
+      card.className = `char-card rarity-${c.rarity.toLowerCase()} ${c.id === selectedId ? 'selected' : ''}`;
+      card.innerHTML = `<canvas class="portrait" width="64" height="64"></canvas>
       <div>
-        <div style="font-weight:800; color:${RARITY_COLORS[c.rarity] || '#fff'}">${c.name}${c.unlocked ? '' : ' • Locked'}</div>
-        <div style="font-size:11px; margin-top:2px; color:var(--ink-soft)">Lv.${c.level} • ${c.rarity}</div>
+        <div class="char-name" style="color:${RARITY_COLORS[c.rarity] || '#fff'}">${c.name}${c.unlocked ? '' : ' • Locked'}</div>
+        <div style="font-size:11px; margin-top:2px; color:var(--ink-soft)">Lv.${c.level} • ${c.rarity} • ${c.role}</div>
         <div class="meta-row"><span>${c.theme}</span></div>
+        <div class="ability-icons"><span title="Passive">◇ ${c.passive.slice(0, 22)}...</span><span title="Active">✦ ${c.active.slice(0, 22)}...</span></div>
       </div>`;
       this.drawPortrait(card.querySelector('canvas'), c);
 
@@ -170,7 +177,8 @@ export class UIManager {
       <div class="panel reward-panel">
         <div class="subtitle">Capsules Ready: ${packs}</div>
         <div class="reward-core"></div>
-        <div style="font-size:15px; font-weight:800; max-width:80%;">${lastReward || 'Tap OPEN to reveal your next drop.'}</div>
+        <div class="reward-glow"></div>
+        <div class="reward-copy">${lastReward || 'Tap OPEN to reveal your next drop.'}</div>
         <div style="font-size:11px; color:var(--ink-soft)">Rewards reveal coins, gems, shards, and unlocks.</div>
       </div>
       <div class="btn-row two"></div>`;
@@ -222,7 +230,7 @@ export class UIManager {
 
   showResultBanner(won) {
     const banner = document.createElement('div');
-    banner.className = 'results-banner';
+    banner.className = `results-banner ${won ? 'win' : 'lose'}`;
     banner.textContent = won ? 'VICTORY' : 'DEFEAT';
     this.layer.append(banner);
     setTimeout(() => banner.remove(), 1200);
@@ -238,16 +246,38 @@ export class UIManager {
 
   drawPortrait(canvas, char) {
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#10204a';
-    ctx.fillRect(0, 0, 58, 58);
-    ctx.fillStyle = char.color;
-    ctx.fillRect(16, 16, 26, 30);
-    ctx.fillStyle = '#ffefca';
-    ctx.fillRect(18, 10, 22, 10);
-    ctx.fillStyle = '#0d1738';
-    ctx.fillRect(21, 14, 3, 3);
-    ctx.fillRect(34, 14, 3, 3);
-    ctx.fillStyle = 'rgba(255,255,255,.2)';
-    ctx.fillRect(4, 4, 12, 4);
+    const [a, b] = char.cardGradient;
+    const g = ctx.createLinearGradient(0, 0, 64, 64);
+    g.addColorStop(0, a);
+    g.addColorStop(1, b);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 64, 64);
+
+    const v = char.visuals;
+    const px = (x, y, w, h, c) => {
+      ctx.fillStyle = v.outline;
+      ctx.fillRect(x - 1, y - 1, w + 2, h + 2);
+      ctx.fillStyle = c;
+      ctx.fillRect(x, y, w, h);
+    };
+
+    px(23, 36, 7, 10, v.legs);
+    px(33, 36, 7, 10, v.legs);
+    px(23, 46, 7, 4, v.shoes);
+    px(33, 46, 7, 4, v.shoes);
+    px(20, 18, 24, 18, v.torso);
+    px(17, 19, 6, 13, v.shoulder);
+    px(41, 19, 6, 13, v.shoulder);
+    px(22, 8, 20, 12, v.skin);
+    px(20, 3, 24, 6, v.hair);
+    px(26, 0, 12, 4, v.headgear);
+    px(29, 23, 6, 8, v.band);
+
+    ctx.fillStyle = v.band;
+    ctx.font = 'bold 8px Inter';
+    ctx.fillText(v.emblem, 29, 30);
+
+    ctx.fillStyle = 'rgba(255,255,255,.18)';
+    ctx.fillRect(4, 4, 15, 5);
   }
 }
