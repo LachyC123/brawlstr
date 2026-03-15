@@ -273,16 +273,16 @@ export class UIManager {
     wrap.className = 'match-overlay';
     wrap.innerHTML = `
       <div class="hud-top ${scorePulse}">
-        <div class="hud-bubble"><span class="subtitle">YOU</span><strong>${state.playerScore}</strong></div>
+        <div class="hud-bubble"><span class="subtitle">YOU</span><strong>${state.playerScore}</strong><em class="hud-tag">🏆</em></div>
         <div class="hud-bubble hud-center">
           <span class="subtitle">RALLY</span><strong>${state.rally}</strong>
           <div class="event-chip">${state.eventText || 'Keep pressure high'}</div>
         </div>
-        <div class="hud-bubble" style="text-align:right;"><span class="subtitle">CPU</span><strong>${state.aiScore}</strong></div>
+        <div class="hud-bubble" style="text-align:right;"><span class="subtitle">CPU</span><strong>${state.aiScore}</strong><em class="hud-tag">⚔️</em></div>
       </div>
       <div class="special-meter ${energyPulse}">
         <div class="special-fill" style="width:${Math.max(0, Math.min(100, state.energy))}%"></div>
-        <span>SPECIAL ${Math.floor(state.energy)}%</span>
+        <span class="meter-text">SPECIAL ${Math.floor(state.energy)}%</span>
       </div>
       <button type="button" class="pause-chip">II Pause</button>
       <div class="touch-controls">

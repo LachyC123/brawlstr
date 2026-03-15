@@ -174,11 +174,13 @@ export class Player {
       base.torsoScaleX = 0.96;
       base.bob = 1;
     } else if (this.animState === ANIM_STATES.SPIKE) {
-      base.armRight += 11;
-      base.armLift = -18;
-      base.lean -= 5;
-      base.torsoScaleY = 0.92;
-      base.torsoScaleX = 1.08;
+      base.armLeft -= 4;
+      base.armRight += 15;
+      base.armLift = -22;
+      base.lean -= 8;
+      base.headY = -63;
+      base.torsoScaleY = 0.9;
+      base.torsoScaleX = 1.1;
     } else if (this.animState === ANIM_STATES.BLOCK) {
       base.armLeft -= 12;
       base.armRight += 12;
@@ -227,20 +229,26 @@ export class Player {
     ctx.scale(this.facing, 1);
 
     if (this.landingPulse > 0) {
-      ctx.fillStyle = 'rgba(230, 247, 255, 0.4)';
+      ctx.fillStyle = 'rgba(230, 247, 255, 0.35)';
       ctx.fillRect(-30, 4, 60, 6);
+      ctx.fillStyle = 'rgba(185, 225, 255, 0.28)';
+      ctx.fillRect(-24, 10, 48, 3);
     }
 
     if (this.specialTimer > 0) {
       ctx.strokeStyle = this.character.fxColor;
       ctx.lineWidth = 3;
       ctx.strokeRect(-31, -87, 62, 83);
+      ctx.fillStyle = `${this.character.fxColor}33`;
+      ctx.fillRect(-30, -86, 60, 81);
     }
 
     if (this.specialReady && this.specialTimer <= 0) {
       ctx.strokeStyle = 'rgba(255,223,147,0.55)';
       ctx.lineWidth = 2;
       ctx.strokeRect(-33, -92, 66, 88);
+      ctx.fillStyle = 'rgba(255, 219, 120, 0.12)';
+      ctx.fillRect(-32, -91, 64, 86);
     }
 
     ctx.translate(pose.lean, 0);
@@ -249,9 +257,11 @@ export class Player {
     const outline = v.outline;
     const px = (x0, y0, w, h, color) => {
       ctx.fillStyle = outline;
-      ctx.fillRect(x0 - 1, y0 - 1, w + 2, h + 2);
+      ctx.fillRect(x0 - 2, y0 - 2, w + 4, h + 4);
       ctx.fillStyle = color;
       ctx.fillRect(x0, y0, w, h);
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.fillRect(x0, y0, w, Math.max(2, Math.floor(h * 0.25)));
     };
 
     px(-11 + v.stance.legSpread, -17 + pose.kneeBend, 10, 15, v.legs);
@@ -269,6 +279,8 @@ export class Player {
     px(-15, pose.headY - 8, 30, 8, v.hair);
     px(-8, pose.headY - 11, 16, 4, v.headgear);
     px(-3, -44, 6, 12, v.band);
+    px(-14, -52, 4, 14, v.band);
+    px(10, -52, 4, 14, v.band);
 
     ctx.fillStyle = outline;
     ctx.fillRect(-7, pose.headY + 6, 3, 3);

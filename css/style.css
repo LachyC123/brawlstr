@@ -1,15 +1,15 @@
 :root {
-  --bg-0: #070b1b;
-  --bg-1: #111f46;
-  --bg-2: #1c3775;
-  --panel-0: #19285a;
-  --panel-1: #223872;
-  --ink: #f3f8ff;
-  --ink-soft: #b5c9ee;
-  --gold-0: #ffe08f;
-  --gold-1: #ee9946;
-  --blue-0: #77d6ff;
-  --blue-1: #3f8be7;
+  --bg-0: #060b1b;
+  --bg-1: #101f46;
+  --bg-2: #1a356f;
+  --panel-0: #1a2b5f;
+  --panel-1: #243b77;
+  --ink: #f2f8ff;
+  --ink-soft: #b8caea;
+  --gold-0: #ffe1a0;
+  --gold-1: #de8a48;
+  --blue-0: #86d6ff;
+  --blue-1: #3d87e2;
   --ok: #8fffab;
   --danger: #ff7fa0;
   --shadow: rgba(4, 8, 26, 0.74);
@@ -21,7 +21,7 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; }
 html, body {
   margin: 0; width: 100%; height: 100%; overflow: hidden; touch-action: none;
-  background: radial-gradient(circle at 50% 10%, #26498f 0%, #0f1f48 40%, #060a1a 100%);
+  background: radial-gradient(circle at 50% 10%, #2a4f95 0%, #101f4a 40%, #060a1a 100%);
   color: var(--ink); font-family: Inter, system-ui, sans-serif;
 }
 canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-action: manipulation; }
@@ -29,19 +29,20 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
 #app { position: fixed; inset: 0; display: flex; justify-content: center; align-items: center; overflow: hidden; }
 #game-canvas, #ui-layer { width: min(100vw, calc(100vh * 0.5625)); height: min(100vh, calc(100vw * 1.777)); }
 #game-canvas {
-  max-height: 100vh; image-rendering: pixelated; border: 4px solid #79b9ff; border-radius: 22px;
-  box-shadow: 0 20px 60px var(--shadow), inset 0 0 0 4px rgba(173, 209, 255, 0.16); background: #101e46;
+  max-height: 100vh; image-rendering: pixelated; border: 4px solid #7dbdff; border-radius: 22px;
+  box-shadow: 0 22px 64px var(--shadow), inset 0 0 0 4px rgba(173, 209, 255, 0.14), 0 0 0 1px rgba(196, 225, 255, 0.22); background: #101e46;
 }
 #ui-layer { position: absolute; pointer-events: none; }
 
 .screen {
   pointer-events: auto; position: absolute; inset: 0; display: flex; flex-direction: column;
   padding: 16px; gap: 10px; overflow: hidden; animation: screenIn 0.34s cubic-bezier(.21,.86,.31,1);
+  background: linear-gradient(180deg, rgba(9, 18, 43, 0.12), rgba(5, 10, 24, 0.26));
 }
 .ambient-glow {
   position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(circle at 16% 6%, rgba(170, 224, 255, 0.3), transparent 48%),
-    radial-gradient(circle at 86% 45%, rgba(144, 122, 255, 0.18), transparent 42%);
+  background: radial-gradient(circle at 16% 6%, rgba(170, 224, 255, 0.24), transparent 48%),
+    radial-gradient(circle at 86% 45%, rgba(144, 122, 255, 0.14), transparent 42%);
 }
 .ambient-shards {
   position: absolute; inset: 0; pointer-events: none;
@@ -50,9 +51,9 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
 }
 
 .panel {
-  position: relative; background: linear-gradient(180deg, rgba(40, 66, 128, .95), rgba(19, 31, 69, .98));
+  position: relative; background: linear-gradient(180deg, rgba(42, 68, 131, .96), rgba(19, 31, 69, .98));
   border: var(--edge) solid #8dbfff; border-radius: var(--radius-md);
-  box-shadow: 0 7px 0 #0b1437, 0 10px 20px rgba(0, 0, 0, 0.24), inset 0 0 0 2px rgba(158, 206, 255, 0.16);
+  box-shadow: 0 8px 0 #0a1437, 0 14px 24px rgba(0, 0, 0, 0.28), inset 0 0 0 2px rgba(158, 206, 255, 0.14);
   padding: 11px;
 }
 .panel::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(180deg, rgba(186, 228, 255, 0.18), transparent 35%); pointer-events: none; }
@@ -91,16 +92,16 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
   color: #fffdfa; pointer-events: auto; cursor: pointer; transition: transform .1s ease, filter .12s ease;
 }
 .main-btn, .small-btn, .ghost-btn {
-  border-radius: 13px; border: var(--edge) solid #ffd48b; box-shadow: 0 6px 0 #8a4f2b;
+  border-radius: 13px; border: var(--edge) solid #ffd48b; box-shadow: 0 6px 0 #8a4f2b, 0 10px 16px rgba(8, 12, 34, 0.28), inset 0 1px 0 rgba(255, 240, 202, 0.28);
   background: linear-gradient(180deg, #ffc56f, #dc8246); min-height: 44px; font-size: 12px; padding: 8px;
 }
 .main-btn { min-height: 52px; font-size: 13px; }
 .main-btn.alt, .ghost-btn {
-  border-color: #9ad9ff; box-shadow: 0 6px 0 #28539f;
+  border-color: #9ad9ff; box-shadow: 0 6px 0 #28539f, 0 10px 16px rgba(8, 12, 34, 0.24), inset 0 1px 0 rgba(221, 241, 255, 0.3);
   background: linear-gradient(180deg, #6ecbff, #397fe0);
 }
 .ghost-btn { background: linear-gradient(180deg, #5f7fd0, #3754a0); }
-.main-btn.pulse { animation: pulseBtn 1.4s ease-in-out infinite; }
+.main-btn.pulse { animation: pulseBtn 1.4s ease-in-out infinite; box-shadow: 0 0 0 2px rgba(255, 213, 143, 0.22), 0 8px 16px rgba(15, 16, 38, 0.28), 0 6px 0 #8a4f2b; }
 .main-btn:active, .main-btn.pressed, .small-btn:active, .ghost-btn:active, .ctrl:active { transform: translateY(4px) scale(.985); box-shadow: 0 2px 0 rgba(23, 16, 13, 0.6); }
 .main-btn:disabled, .small-btn:disabled { filter: saturate(.2) brightness(.7); transform: none; box-shadow: 0 5px 0 #394165; }
 
@@ -174,8 +175,10 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
 .hud-top { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; transition: transform .18s ease; }
 .hud-top.score-pop { animation: scorePop .35s ease; }
 .hud-bubble {
-  background: rgba(10, 20, 50, 0.82); border: 2px solid #8cb6ff; border-radius: 10px; padding: 6px 9px;
+  position: relative;
+  background: rgba(10, 20, 50, 0.84); border: 2px solid #8cb6ff; border-radius: 10px; padding: 6px 9px;
   font-size: 12px; font-weight: 800; display: grid;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(190, 222, 255, 0.22);
 }
 .hud-bubble strong { font-size: 19px; }
 .hud-center { text-align: center; min-width: 108px; }
@@ -183,9 +186,10 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
 .special-meter {
   position: absolute; left: 16px; right: 16px; top: 88px; height: 24px; border-radius: 12px; border: 2px solid #84bcff;
   background: rgba(7, 18, 46, 0.82); overflow: hidden; pointer-events: none;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(183, 221, 255, 0.2);
 }
 .special-meter span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; font-weight: 900; text-shadow: 0 1px 0 #0f1b3d; }
-.special-fill { height: 100%; background: linear-gradient(90deg, #58c7ff, #71f8d4, #ffe286); transition: width .16s linear; }
+.special-fill { height: 100%; background: linear-gradient(90deg, #58c7ff, #71f8d4, #ffe286); transition: width .16s linear; box-shadow: inset 0 0 10px rgba(255,255,255,0.28); }
 .special-meter.ready { border-color: #ffd589; box-shadow: 0 0 10px rgba(255,214,134,0.5); animation: pulseGlow 1s ease-in-out infinite; }
 .pause-chip {
   pointer-events: auto; position: absolute; right: 16px; top: 124px; border: 2px solid #89bcff; border-radius: 10px;
@@ -197,9 +201,12 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
 .ctrl {
   height: 60px; border-radius: 14px; border: 2px solid #9ac4ff;
   background: linear-gradient(180deg, rgba(34, 62, 121, 0.95), rgba(21, 35, 76, 0.94));
-  box-shadow: inset 0 1px 0 rgba(189, 220, 255, 0.3), 0 6px 10px rgba(0, 0, 0, 0.22); display: grid; place-items: center; font-size: 12px;
+  box-shadow: inset 0 1px 0 rgba(189, 220, 255, 0.3), 0 6px 10px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(170, 215, 255, 0.16); display: grid; place-items: center; font-size: 12px;
 }
 .ctrl.action { background: linear-gradient(180deg, rgba(255, 169, 97, 0.95), rgba(190, 83, 43, 0.96)); border-color: #ffd696; }
+
+.hud-tag { position: absolute; right: 8px; top: 6px; font-style: normal; font-size: 11px; opacity: 0.76; }
+.meter-text { letter-spacing: .03em; }
 
 .toast {
   position: absolute; left: 50%; transform: translateX(-50%); top: 122px;
