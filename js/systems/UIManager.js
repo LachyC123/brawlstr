@@ -27,6 +27,8 @@ export class UIManager {
     const shell = document.createElement('div');
     shell.className = 'screen';
     shell.innerHTML = `
+      <div class="ambient-depth"></div>
+      <div class="ambient-particles"></div>
       <div class="ambient-glow"></div>
       <div class="ambient-shards"></div>
       <header class="panel premium-header">
@@ -47,6 +49,7 @@ export class UIManager {
     hero.innerHTML = `
       <div class="hero-backdrop"></div>
       <div class="hero-copy">
+        <div class="section-chip">Primary Action</div>
         <div class="subtitle">Featured Brawler</div>
         <h2>${data.selected?.name || 'Rookie'}</h2>
         <p>${data.selected?.active || 'Master timing, unleash specials, and dominate rallies.'}</p>
@@ -89,13 +92,17 @@ export class UIManager {
     });
 
     const nav = document.createElement('div');
-    nav.className = 'btn-row two';
-    nav.append(
+    nav.className = 'panel action-matrix';
+    nav.innerHTML = '<div class="section-label">Secondary Actions</div>';
+    const navGrid = document.createElement('div');
+    navGrid.className = 'btn-row two';
+    navGrid.append(
       this.button('Brawler Roster', () => this.game.changeScene('roster'), 'main-btn alt'),
       this.button('Trophy Road', () => this.game.changeScene('road'), 'main-btn alt'),
       this.button('Open Capsule', () => this.game.changeScene('rewards')),
       this.button('Quick Training', () => this.game.changeScene('tutorial'), 'ghost-btn')
     );
+    nav.append(navGrid);
 
     const missionPanel = document.createElement('section');
     missionPanel.className = 'panel mission-panel';
@@ -194,6 +201,7 @@ export class UIManager {
       const state = n.claimed ? 'claimed' : n.ready ? 'ready' : (trophies + 70 >= n.trophies ? 'near' : 'locked');
       node.className = `node ${state}`;
       node.innerHTML = `<div class="subtitle">${state === 'near' ? 'Almost there' : state}</div>
+        <div class="node-icon">${n.type === 'character' ? '★' : n.type === 'pack' ? '◈' : '⬢'}</div>
         <div class="node-title">${n.trophies}</div>
         <div class="mission-meta">${this.rewardLabel(n)}</div>`;
       if (n.ready) node.append(this.button('Claim', () => this.game.claimRoad(n.index), 'small-btn'));
@@ -219,8 +227,9 @@ export class UIManager {
     const wrap = this.screenShell('Capsule Bay', 'Reward Reveal', 'Tap to crack open the spotlight drop.');
 
     const panel = document.createElement('section');
-    panel.className = 'panel reward-panel';
+    panel.className = `panel reward-panel ${lastReward ? 'revealed' : ''}`;
     panel.innerHTML = `
+      <div class="section-chip">Reward Spotlight</div>
       <div class="subtitle">Capsules Ready: ${packs}</div>
       <div class="reward-stage">
         <div class="reward-core"></div>
