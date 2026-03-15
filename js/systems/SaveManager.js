@@ -19,7 +19,7 @@ export class SaveManager {
 
   defaultData() {
     return {
-      profile: { name: 'Rookie Ace', trophies: 0, selectedCharacter: STARTING_UNLOCKS[0], league: 'Rookie Sky' },
+      profile: { name: 'Sky Rookie', trophies: 0, selectedCharacter: STARTING_UNLOCKS[0], league: 'Rookie Sky' },
       currencies: { coins: 250, gems: 20, packs: 1 },
       unlocks: [...STARTING_UNLOCKS],
       upgrades: {},

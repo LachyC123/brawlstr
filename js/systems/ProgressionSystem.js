@@ -11,9 +11,9 @@ export class ProgressionSystem {
     if (!this.saveData.missions.length || now - this.saveData.lastDailyRefresh > dayMs) {
       this.saveData.lastDailyRefresh = now;
       this.saveData.missions = [
-        { id: 'win3', text: 'Win 3 matches', goal: 3, progress: 0, reward: { coins: 120 } },
-        { id: 'spike10', text: 'Land 10 spikes', goal: 10, progress: 0, reward: { coins: 80, gems: 4 } },
-        { id: 'special5', text: 'Use specials 5 times', goal: 5, progress: 0, reward: { gems: 8 } },
+        { id: 'win3', text: 'Win 3 matches in any mode', goal: 3, progress: 0, reward: { coins: 120 } },
+        { id: 'spike10', text: 'Land 10 clean spikes', goal: 10, progress: 0, reward: { coins: 80, gems: 4 } },
+        { id: 'special5', text: 'Trigger 5 special swings', goal: 5, progress: 0, reward: { gems: 8 } },
       ];
     }
   }

@@ -14,6 +14,7 @@ export class InputManager {
       if (e.key === 'ArrowUp' || e.key === ' ' || e.key.toLowerCase() === 'w') this.state.jump = true;
       if (e.key.toLowerCase() === 'e' || e.key === 'Shift') this.state.special = true;
     });
+
     window.addEventListener('keyup', (e) => {
       if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') this.state.left = false;
       if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') this.state.right = false;
@@ -22,20 +23,32 @@ export class InputManager {
     });
 
     const target = this.uiLayer;
-    target.addEventListener('pointerdown', (e) => this.handlePointer(e, true));
-    target.addEventListener('pointermove', (e) => this.handlePointer(e, true));
-    target.addEventListener('pointerup', (e) => this.handlePointer(e, false));
-    target.addEventListener('pointercancel', (e) => this.handlePointer(e, false));
+    target.style.touchAction = 'none';
+
+    target.addEventListener('pointerdown', (e) => {
+      if (e.cancelable) e.preventDefault();
+      target.setPointerCapture(e.pointerId);
+      this.handlePointer(e, true);
+    }, { passive: false });
+
+    target.addEventListener('pointermove', (e) => this.handlePointer(e, true), { passive: false });
+
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach((name) => {
+      target.addEventListener(name, (e) => this.handlePointer(e, false), { passive: false });
+    });
   }
 
   handlePointer(e, active) {
     const rect = this.uiLayer.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
     const x = (e.clientX - rect.left) / rect.width;
+
     if (!active) {
       this.pointerMap.delete(e.pointerId);
     } else {
       this.pointerMap.set(e.pointerId, x);
     }
+
     this.rebuildTouchState();
   }
 
@@ -46,9 +59,9 @@ export class InputManager {
     this.state.special = false;
 
     for (const x of this.pointerMap.values()) {
-      if (x < 0.25) this.state.left = true;
-      else if (x < 0.5) this.state.right = true;
-      else if (x < 0.75) this.state.jump = true;
+      if (x <= 0.24) this.state.left = true;
+      else if (x <= 0.48) this.state.right = true;
+      else if (x <= 0.74) this.state.jump = true;
       else this.state.special = true;
     }
   }
