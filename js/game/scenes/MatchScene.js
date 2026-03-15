@@ -15,6 +15,8 @@ export class MatchScene {
     this.hitStop = 0;
     this.shake = 0;
     this.particles = [];
+    this.ambient = [];
+    this.celebrate = 0;
   }
 
   enter(modeRanked = true) {
@@ -24,6 +26,12 @@ export class MatchScene {
     this.rally = 0;
     this.stats = { spikes: 0, specials: 0 };
     this.particles = [];
+    this.ambient = Array.from({ length: 20 }, (_, i) => ({
+      x: (i * 37) % this.game.width,
+      y: 640 + (i * 17) % 350,
+      speed: 8 + (i % 5) * 2,
+      size: 2 + (i % 2),
+    }));
     const selected = this.game.characterSystem.get(this.game.save.profile.selectedCharacter);
     const aiPool = this.game.characterSystem.list().filter((c) => c.unlocked);
     const aiChar = aiPool[(Math.random() * aiPool.length) | 0];
@@ -32,8 +40,10 @@ export class MatchScene {
     this.ball = new Ball(180, 820);
     this.net = new Net(360, this.floorY + 5);
     this.roundOver = false;
+    this.celebrate = 0;
     this.difficulty = Math.min(0.92, 0.45 + this.game.save.profile.trophies / 900);
     this.ball.serve(true);
+    this.game.audio.play('serve');
     this.game.ui.renderMatchHUD(this.hudState());
     this.game.ui.toast(this.modeRanked ? 'Trophy Clash' : 'Casual Rally');
   }
@@ -51,6 +61,9 @@ export class MatchScene {
 
     const i = this.game.input.state;
     this.player.update(dt, (i.right ? 1 : 0) - (i.left ? 1 : 0), i.jump, i.special, 2050);
+    if (this.player.justJumped) this.game.audio.play('jump');
+    if (this.player.specialTimer > 0.52) this.game.audio.play('characterSpecial');
+
     this.ai.think(this.ball, dt, this.difficulty, { min: 380, max: 690 });
 
     this.player.x = Math.max(30, Math.min(330, this.player.x));
@@ -73,6 +86,7 @@ export class MatchScene {
     }
 
     this.shake *= 0.84;
+    this.celebrate = Math.max(0, this.celebrate - dt);
     this.game.ui.renderMatchHUD(this.hudState());
   }
 
@@ -83,6 +97,14 @@ export class MatchScene {
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.vy += 500 * dt;
+    });
+
+    this.ambient.forEach((p) => {
+      p.y -= p.speed * dt;
+      if (p.y < 610) {
+        p.y = 980;
+        p.x = 14 + Math.random() * (this.game.width - 28);
+      }
     });
   }
 
@@ -118,13 +140,14 @@ export class MatchScene {
           this.ball.ignite = actor.character.id === 'flare' ? 1.2 : 0.35;
           if (actor.character.id === 'granite') this.ball.vx *= -1;
           this.shake = 14;
-          this.spawnBurst(this.ball.x, this.ball.y, '#ffd9a1', 12, 200);
-          this.game.audio.play('spike');
+          this.spawnBurst(this.ball.x, this.ball.y, actor.character.fxColor, 14, 220);
+          this.game.audio.play('spikeHit');
         } else {
           this.spawnBurst(this.ball.x, this.ball.y, '#f0f6ff', 7, 120);
           this.game.audio.play('serve');
         }
 
+        actor.triggerHitPose();
         actor.gainEnergy(10);
         actor.touches += 1;
         this.stats.spikes += 1;
@@ -141,6 +164,8 @@ export class MatchScene {
       this.ball.vx *= -0.83;
       this.ball.x += Math.sign(this.ball.vx) * 6;
       this.spawnBurst(this.net.x, this.ball.y, '#d8efff', 6, 90);
+      this.player.triggerBlockPose();
+      this.ai.triggerBlockPose();
       this.game.audio.play('block');
     }
   }
@@ -149,6 +174,7 @@ export class MatchScene {
     if (playerScored) this.playerScore += 1;
     else this.aiScore += 1;
     this.rally = 0;
+    this.celebrate = 0.45;
     this.game.audio.play('score');
 
     if (this.playerScore >= 5 || this.aiScore >= 5) {
@@ -159,6 +185,9 @@ export class MatchScene {
       this.game.save.currencies.packs += won ? 1 : 0;
       this.game.save.lastReward = won ? 'Win bonus: +1 capsule' : 'Match bonus: +30 coins';
       this.roundOver = true;
+      this.player.setResultPose(won);
+      this.ai.setResultPose(!won);
+      this.game.audio.play(won ? 'victory' : 'defeat');
       this.game.ui.showResultBanner(won);
       this.game.ui.toast(won ? 'Crowd goes wild!' : 'Reset and run it back');
       setTimeout(() => this.game.changeScene('menu'), 1300);
@@ -167,6 +196,7 @@ export class MatchScene {
 
     this.ball = new Ball(playerScored ? 180 : 540, 820);
     this.ball.serve(playerScored);
+    this.game.audio.play('serve');
     this.player.reset(170);
     this.ai.reset(540);
   }
@@ -178,10 +208,28 @@ export class MatchScene {
       ctx.translate((Math.random() - 0.5) * this.shake, (Math.random() - 0.5) * this.shake * 0.6);
     }
 
-    ctx.fillStyle = '#3f7fbe';
+    ctx.fillStyle = '#346ea5';
     ctx.fillRect(0, this.floorY, this.game.width, this.game.height - this.floorY);
-    ctx.fillStyle = '#7ab5f1';
-    for (let i = 0; i < 12; i += 1) ctx.fillRect(14 + i * 58, this.floorY + 14, 30, 5);
+    ctx.strokeStyle = 'rgba(205,231,255,0.8)';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(20, this.floorY + 12);
+    ctx.lineTo(this.game.width - 20, this.floorY + 12);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(155,210,255,0.5)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 12; i += 1) {
+      ctx.beginPath();
+      ctx.moveTo(15 + i * 58, this.floorY + 14);
+      ctx.lineTo(44 + i * 58, this.floorY + 26);
+      ctx.stroke();
+    }
+
+    this.ambient.forEach((p) => {
+      ctx.fillStyle = 'rgba(180, 228, 255, 0.2)';
+      ctx.fillRect(p.x, p.y, p.size, p.size);
+    });
 
     this.net.draw(ctx);
     this.player.draw(ctx);
@@ -196,6 +244,11 @@ export class MatchScene {
     });
 
     if (this.shake > 0.3) ctx.restore();
+
+    if (this.celebrate > 0) {
+      ctx.fillStyle = `rgba(255,238,173,${this.celebrate * 0.5})`;
+      ctx.fillRect(0, 220, this.game.width, 14);
+    }
 
     ctx.fillStyle = '#ffe2a3';
     ctx.font = '14px "Press Start 2P"';

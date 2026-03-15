@@ -29,6 +29,11 @@ export class SaveManager {
       tutorialDone: false,
       lastDailyRefresh: Date.now(),
       lastReward: null,
+      settings: {
+        audio: {
+          sfxEnabled: true,
+        },
+      },
     };
   }
 }
