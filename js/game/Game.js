@@ -37,8 +37,13 @@ export class Game {
       road: new TrophyRoadScene(this),
       roster: new RosterScene(this),
       rewards: new RewardsScene(this),
-      tutorial: { enter: () => this.ui.renderTutorial(this.tutorialStep), update: () => {}, render: (ctx) => this.drawArenaBackdrop(ctx, 0.18) },
+      tutorial: {
+        enter: () => this.ui.renderTutorial(this.tutorialStep),
+        update: () => {},
+        render: (ctx) => this.drawArenaBackdrop(ctx, 0.2),
+      },
     };
+
     this.currentScene = this.scenes.boot;
     this.currentScene.enter();
     this.last = performance.now();
@@ -52,7 +57,9 @@ export class Game {
     requestAnimationFrame(this.loop);
   };
 
-  start() { requestAnimationFrame(this.loop); }
+  start() {
+    requestAnimationFrame(this.loop);
+  }
 
   changeScene(key, ...args) {
     this.currentScene = this.scenes[key];
@@ -82,15 +89,17 @@ export class Game {
   upgradeCharacter(id) {
     if (this.characterSystem.upgrade(id)) {
       this.audio.play('reward');
-      this.ui.toast('Upgrade successful');
+      this.ui.toast('Upgrade complete');
       this.changeScene('roster');
-    } else this.ui.toast('Not enough coins');
+    } else {
+      this.ui.toast('Not enough coins');
+    }
   }
 
   claimMission(id) {
     if (this.progression.claimMission(id)) {
       this.audio.play('reward');
-      this.ui.toast('Mission claimed!');
+      this.ui.toast('Mission reward claimed');
       this.changeScene('menu');
     }
   }
@@ -99,24 +108,28 @@ export class Game {
     const reward = this.progression.claimRoad(index);
     if (!reward) return;
     this.audio.play('trophy');
-    this.ui.toast(`Claimed ${reward.type}`);
+    this.ui.toast('Path reward collected');
     this.changeScene('road');
   }
 
   openPack() {
-    if (this.save.currencies.packs <= 0) return this.ui.toast('No capsules left');
+    if (this.save.currencies.packs <= 0) return this.ui.toast('No capsules available');
     this.save.currencies.packs -= 1;
     const r = this.rollPackReward();
+
     if (r.type === 'coins') this.save.currencies.coins += r.amount;
     if (r.type === 'gems') this.save.currencies.gems += r.amount;
+
     if (r.type === 'shards') {
-      const locked = this.characterSystem.list().find((c) => !c.unlocked) || this.characterSystem.list()[0];
+      const chars = this.characterSystem.list();
+      const locked = chars.find((c) => !c.unlocked) || chars[0];
       const unlocked = this.characterSystem.addShards(locked.id, r.amount);
-      this.save.lastReward = `${r.amount} ${locked.name} shards${unlocked ? ' • Unlocked!' : ''}`;
+      this.save.lastReward = `${r.amount} shards for ${locked.name}${unlocked ? ' • Unlock!' : ''}`;
       this.audio.play('reward');
       this.changeScene('rewards');
       return;
     }
+
     this.save.lastReward = `${r.amount} ${r.type}`;
     this.audio.play('reward');
     this.changeScene('rewards');
@@ -128,14 +141,17 @@ export class Game {
     for (const item of PACK_TABLE) {
       roll -= item.weight;
       if (roll <= 0) {
-        return { type: item.type, amount: item.min + ((Math.random() * (item.max - item.min + 1)) | 0) };
+        return {
+          type: item.type,
+          amount: item.min + ((Math.random() * (item.max - item.min + 1)) | 0),
+        };
       }
     }
     return { type: 'coins', amount: 80 };
   }
 
   nextTutorial() {
-    this.tutorialStep++;
+    this.tutorialStep += 1;
     if (this.tutorialStep > 3) return this.finishTutorial();
     this.ui.renderTutorial(this.tutorialStep);
   }
@@ -148,34 +164,75 @@ export class Game {
   }
 
   drawArenaBackdrop(ctx, intensity = 1) {
-    ctx.fillStyle = '#2c4a8e';
+    const t = performance.now() * 0.001;
+    const gradient = ctx.createLinearGradient(0, 0, 0, this.height);
+    gradient.addColorStop(0, '#335fae');
+    gradient.addColorStop(0.4, '#1c346f');
+    gradient.addColorStop(1, '#0d1737');
+    ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, this.width, this.height);
-    ctx.fillStyle = '#243d77';
-    for (let i = 0; i < 6; i++) ctx.fillRect(0, 220 + i * 70, this.width, 40);
-    ctx.fillStyle = '#1a2e5b';
-    for (let i = 0; i < 30; i++) {
-      ctx.fillRect(i * 26, 760 + Math.sin(i) * 6, 18, 34);
+
+    ctx.fillStyle = '#93c6ff';
+    for (let i = 0; i < 4; i += 1) {
+      const x = 40 + i * 180 + Math.sin(t + i) * 5;
+      const y = 120 + i * 45;
+      ctx.fillRect(x, y, 70, 6);
+      ctx.fillRect(x + 20, y - 8, 56, 6);
     }
-    ctx.fillStyle = '#ffd67a';
+
+    ctx.fillStyle = '#274883';
+    for (let i = 0; i < 6; i += 1) {
+      const y = 248 + i * 70;
+      ctx.fillRect(0, y, this.width, 38);
+    }
+
+    ctx.fillStyle = '#1a2f5e';
+    for (let i = 0; i < 32; i += 1) {
+      const sway = Math.sin(i * 0.8 + t * 2.2) * 4;
+      ctx.fillRect(i * 24, 780 + sway, 18, 34);
+    }
+
+    ctx.fillStyle = '#355d9f';
+    ctx.fillRect(0, 915, this.width, 210);
+
+    ctx.fillStyle = '#75b6ff';
+    for (let i = 0; i < 16; i += 1) {
+      const width = 22;
+      const h = 6 + ((i % 3) * 2);
+      ctx.fillRect(i * 48, 960 + Math.sin(t * 3 + i) * intensity * 4, width, h);
+    }
+
+    ctx.fillStyle = `rgba(255, 220, 130, ${0.55 * intensity})`;
     const pulse = (Math.sin(performance.now() * 0.004) * 0.5 + 0.5) * intensity;
-    ctx.fillRect(0, 180, this.width * pulse, 6);
+    ctx.fillRect(0, 188, this.width * pulse, 6);
   }
 
   drawHeroShowcase(ctx) {
     const hero = this.characterSystem.get(this.save.profile.selectedCharacter);
+    const t = performance.now() * 0.0025;
+    const bob = Math.sin(t) * 4;
     ctx.save();
-    ctx.translate(360, 860);
-    ctx.fillStyle = '#10204c';
-    ctx.fillRect(-120, -220, 240, 240);
+    ctx.translate(360, 878 + bob);
+
+    ctx.fillStyle = '#0f1f49';
+    ctx.fillRect(-138, -236, 276, 248);
+    ctx.fillStyle = 'rgba(125, 170, 255, 0.35)';
+    ctx.fillRect(-132, -230, 264, 12);
+
     ctx.fillStyle = hero.color;
-    ctx.fillRect(-56, -170, 112, 140);
+    ctx.fillRect(-58, -170, 116, 144);
     ctx.fillStyle = '#ffedcb';
-    ctx.fillRect(-40, -210, 80, 45);
-    ctx.fillStyle = '#10152f';
-    ctx.fillRect(-23, -194, 10, 8);
-    ctx.fillRect(13, -194, 10, 8);
+    ctx.fillRect(-40, -214, 80, 48);
+    ctx.fillStyle = '#121a3a';
+    ctx.fillRect(-22, -196, 10, 8);
+    ctx.fillRect(12, -196, 10, 8);
+
+    ctx.fillStyle = 'rgba(255, 250, 200, 0.4)';
+    ctx.fillRect(70, -210, 14, 150);
     ctx.restore();
   }
 
-  persist() { this.saveManager.save(this.save); }
+  persist() {
+    this.saveManager.save(this.save);
+  }
 }
