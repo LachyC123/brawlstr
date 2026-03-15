@@ -221,14 +221,42 @@ export class Game {
   drawArenaBackdrop(ctx, intensity = 1) {
     const t = performance.now() * 0.001;
     const gradient = ctx.createLinearGradient(0, 0, 0, this.height);
-    gradient.addColorStop(0, '#345ca6');
-    gradient.addColorStop(0.35, '#1b3064');
-    gradient.addColorStop(1, '#0b1330');
+    gradient.addColorStop(0, '#21366f');
+    gradient.addColorStop(0.38, '#172b59');
+    gradient.addColorStop(1, '#090f26');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, this.width, this.height);
 
+    const haze = ctx.createRadialGradient(this.width * 0.5, 140, 40, this.width * 0.5, 320, 470);
+    haze.addColorStop(0, `rgba(142, 204, 255, ${0.22 * intensity})`);
+    haze.addColorStop(1, 'rgba(142, 204, 255, 0)');
+    ctx.fillStyle = haze;
+    ctx.fillRect(0, 0, this.width, 560);
+
+    const parallaxOffsetFar = Math.sin(t * 0.24) * 20;
+    const parallaxOffsetMid = Math.sin(t * 0.38) * 30;
+
+    ctx.fillStyle = '#13254d';
+    for (let i = -1; i < 6; i += 1) {
+      const x = i * 152 + parallaxOffsetFar;
+      ctx.fillRect(x, 178, 108, 178);
+      ctx.fillStyle = 'rgba(197, 223, 255, 0.12)';
+      ctx.fillRect(x + 16, 206, 14, 70);
+      ctx.fillStyle = '#13254d';
+    }
+
+    ctx.fillStyle = '#1d376a';
+    for (let i = -1; i < 7; i += 1) {
+      const x = i * 126 + parallaxOffsetMid;
+      const h = 140 + (i % 2) * 28;
+      ctx.fillRect(x, 250, 92, h);
+      ctx.fillStyle = 'rgba(174, 216, 255, 0.13)';
+      ctx.fillRect(x + 12, 272, 10, 82);
+      ctx.fillStyle = '#1d376a';
+    }
+
     for (let i = 0; i < 8; i += 1) {
-      const alpha = 0.15 + Math.sin(t * 1.5 + i) * 0.05;
+      const alpha = 0.14 + Math.sin(t * 1.5 + i) * 0.04;
       ctx.fillStyle = `rgba(173,208,255,${alpha * intensity})`;
       ctx.fillRect(40 + i * 90, 90 + (i % 2) * 35, 70, 8);
     }
@@ -240,7 +268,7 @@ export class Game {
       const sway = Math.sin(i * 0.8 + t * 2.2) * 4;
       ctx.fillStyle = i % 3 === 0 ? '#16284f' : '#1d3567';
       ctx.fillRect(i * 20, 770 + sway, 16, 46);
-      ctx.fillStyle = 'rgba(243, 203, 112, 0.25)';
+      ctx.fillStyle = 'rgba(243, 203, 112, 0.21)';
       ctx.fillRect(i * 20 + 5, 758 + sway * 0.4, 6, 6);
     }
 
@@ -257,6 +285,11 @@ export class Game {
 
     ctx.fillStyle = '#355d9f';
     ctx.fillRect(0, 915, this.width, 210);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+    for (let i = 0; i < 5; i += 1) {
+      ctx.fillRect(24 + i * 140, 920 + (i % 2) * 10, 110, 4);
+    }
 
     ctx.strokeStyle = 'rgba(193,225,255,0.4)';
     ctx.lineWidth = 2;
@@ -275,6 +308,12 @@ export class Game {
     ctx.fillStyle = `rgba(255, 220, 130, ${0.55 * intensity})`;
     const pulse = (Math.sin(performance.now() * 0.004) * 0.5 + 0.5) * intensity;
     ctx.fillRect(0, 188, this.width * pulse, 6);
+
+    const vignette = ctx.createRadialGradient(this.width * 0.5, this.height * 0.52, 180, this.width * 0.5, this.height * 0.52, 760);
+    vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    vignette.addColorStop(1, `rgba(3, 6, 19, ${0.52 * intensity})`);
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, this.width, this.height);
   }
 
   drawCharacterSprite(ctx, hero, x, y, scale = 1.8) {

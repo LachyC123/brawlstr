@@ -29,11 +29,12 @@ export class MatchScene {
     this.rally = 0;
     this.stats = { spikes: 0, specials: 0 };
     this.particles = [];
-    this.ambient = Array.from({ length: 26 }, (_, i) => ({
-      x: (i * 37) % this.game.width,
-      y: 640 + (i * 17) % 350,
-      speed: 8 + (i % 5) * 2,
-      size: 2 + (i % 2),
+    this.ambient = Array.from({ length: 34 }, (_, i) => ({
+      x: (i * 29) % this.game.width,
+      y: 640 + (i * 13) % 360,
+      speed: 7 + (i % 6) * 2,
+      size: 1 + (i % 3),
+      drift: (i % 2 === 0 ? 1 : -1) * (6 + (i % 4) * 2),
     }));
     const selected = matchup?.player?.character || this.game.characterSystem.get(this.game.save.profile.selectedCharacter);
     const aiPool = this.game.characterSystem.list();
@@ -102,7 +103,7 @@ export class MatchScene {
     this.updateParticles(dt);
 
     if (this.ball.y + this.ball.radius > this.floorY + 2) {
-      this.spawnBurst(this.ball.x, this.floorY - 8, '#b6d6ff', 16, 180, 'dust');
+      this.spawnBurst(this.ball.x, this.floorY - 8, '#b6d6ff', 13, 160, 'dust');
       this.shake = 8;
       const playerLost = this.ball.x < 360;
       this.postEvent(playerLost ? 'Point lost' : 'Point scored', 0.9);
@@ -112,7 +113,7 @@ export class MatchScene {
     if (this.ball.x < 10 || this.ball.x > this.game.width - 10) {
       this.ball.vx *= -0.88;
       this.ball.x = Math.max(10, Math.min(this.game.width - 10, this.ball.x));
-      this.spawnBurst(this.ball.x, this.ball.y, '#cce6ff', 7, 95, 'spark');
+      this.spawnBurst(this.ball.x, this.ball.y, '#cce6ff', 6, 88, 'spark');
       this.postEvent('Wall ricochet', 0.5);
     }
 
@@ -138,6 +139,7 @@ export class MatchScene {
 
     this.ambient.forEach((p) => {
       p.y -= p.speed * dt;
+      p.x += Math.sin(p.y * 0.01 + performance.now() * 0.0013) * p.drift * dt;
       if (p.y < 610) {
         p.y = 980;
         p.x = 14 + Math.random() * (this.game.width - 28);
@@ -184,7 +186,7 @@ export class MatchScene {
           this.postEvent('Special impact!', 1);
           this.game.audio.play('spikeHit');
         } else {
-          this.spawnBurst(this.ball.x, this.ball.y, strong ? '#ffddaa' : '#f0f6ff', strong ? 12 : 7, strong ? 180 : 120, 'spark');
+          this.spawnBurst(this.ball.x, this.ball.y, strong ? '#ffd3a2' : '#d8f0ff', strong ? 10 : 6, strong ? 160 : 105, 'spark');
           this.postEvent(strong ? 'Power spike!' : 'Clean touch', 0.55);
           this.game.audio.play(strong ? 'spikeHit' : 'serve');
         }
@@ -205,7 +207,7 @@ export class MatchScene {
     if (Math.abs(this.ball.x - this.net.x) < this.net.width / 2 + this.ball.radius && this.ball.y > topY - 10) {
       this.ball.vx *= -0.83;
       this.ball.x += Math.sign(this.ball.vx) * 6;
-      this.spawnBurst(this.net.x, this.ball.y, '#d8efff', 9, 120, 'spark');
+      this.spawnBurst(this.net.x, this.ball.y, '#d8efff', 8, 108, 'spark');
       this.player.triggerBlockPose();
       this.ai.triggerBlockPose();
       this.shake = 6;
@@ -278,8 +280,14 @@ export class MatchScene {
       ctx.translate((Math.random() - 0.5) * this.shake, (Math.random() - 0.5) * this.shake * 0.6);
     }
 
-    ctx.fillStyle = '#346ea5';
+    const courtGradient = ctx.createLinearGradient(0, this.floorY - 10, 0, this.game.height);
+    courtGradient.addColorStop(0, '#2f6297');
+    courtGradient.addColorStop(1, '#1f3f70');
+    ctx.fillStyle = courtGradient;
     ctx.fillRect(0, this.floorY, this.game.width, this.game.height - this.floorY);
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
+    ctx.fillRect(0, this.floorY + 28, this.game.width, 16);
     ctx.strokeStyle = 'rgba(205,231,255,0.8)';
     ctx.lineWidth = 4;
     ctx.beginPath();
@@ -297,9 +305,13 @@ export class MatchScene {
     }
 
     this.ambient.forEach((p) => {
-      ctx.fillStyle = 'rgba(180, 228, 255, 0.2)';
-      ctx.fillRect(p.x, p.y, p.size, p.size);
+      ctx.fillStyle = `rgba(180, 228, 255, ${0.1 + p.size * 0.08})`;
+      ctx.fillRect(p.x, p.y, p.size + 1, p.size + 1);
     });
+
+    ctx.fillStyle = 'rgba(6, 12, 34, 0.28)';
+    ctx.fillRect(this.player.x - 32, this.floorY - 2, 64, 8);
+    ctx.fillRect(this.ai.x - 32, this.floorY - 2, 64, 8);
 
     this.net.draw(ctx);
     this.player.draw(ctx);
@@ -311,14 +323,14 @@ export class MatchScene {
       ctx.globalAlpha = alpha;
       if (p.style === 'dust') {
         ctx.fillStyle = p.color;
-        ctx.fillRect(p.x - 5, p.y - 2, 10, 4);
+        ctx.fillRect(p.x - 6, p.y - 2, 12, 4);
       } else if (p.style === 'ring') {
         ctx.strokeStyle = p.color;
         ctx.lineWidth = 2;
-        ctx.strokeRect(p.x - 2, p.y - 2, 5, 5);
+        ctx.strokeRect(p.x - 3, p.y - 3, 7, 7);
       } else {
         ctx.fillStyle = p.color;
-        ctx.fillRect(p.x, p.y, 4, 4);
+        ctx.fillRect(p.x, p.y, 3, 3);
       }
       ctx.globalAlpha = 1;
     });
@@ -331,9 +343,17 @@ export class MatchScene {
     }
 
     if (this.serveFlash > 0) {
-      ctx.fillStyle = `rgba(150,215,255,${this.serveFlash * 0.35})`;
+      ctx.fillStyle = `rgba(150,215,255,${this.serveFlash * 0.28})`;
       ctx.fillRect(0, 0, this.game.width, this.game.height);
     }
+
+    const matchVignette = ctx.createLinearGradient(0, 0, 0, this.game.height);
+    matchVignette.addColorStop(0, 'rgba(2, 6, 18, 0.26)');
+    matchVignette.addColorStop(0.25, 'rgba(2, 6, 18, 0)');
+    matchVignette.addColorStop(0.8, 'rgba(2, 6, 18, 0)');
+    matchVignette.addColorStop(1, 'rgba(2, 6, 18, 0.3)');
+    ctx.fillStyle = matchVignette;
+    ctx.fillRect(0, 0, this.game.width, this.game.height);
 
     ctx.fillStyle = '#ffe2a3';
     ctx.font = '14px "Press Start 2P"';
