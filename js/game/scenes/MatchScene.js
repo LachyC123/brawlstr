@@ -22,7 +22,7 @@ export class MatchScene {
     this.serveFlash = 0;
   }
 
-  enter(modeRanked = true) {
+  enter(modeRanked = true, matchup = null) {
     this.modeRanked = modeRanked;
     this.playerScore = 0;
     this.aiScore = 0;
@@ -35,9 +35,10 @@ export class MatchScene {
       speed: 8 + (i % 5) * 2,
       size: 2 + (i % 2),
     }));
-    const selected = this.game.characterSystem.get(this.game.save.profile.selectedCharacter);
-    const aiPool = this.game.characterSystem.list().filter((c) => c.unlocked);
-    const aiChar = aiPool[(Math.random() * aiPool.length) | 0];
+    const selected = matchup?.player?.character || this.game.characterSystem.get(this.game.save.profile.selectedCharacter);
+    const aiPool = this.game.characterSystem.list();
+    const aiChar = matchup?.opponent?.character || aiPool[(Math.random() * aiPool.length) | 0];
+    this.matchup = matchup;
     this.player = new Player(170, this.floorY, selected);
     this.ai = new Opponent(540, this.floorY, aiChar, true);
     this.ball = new Ball(180, 820);
@@ -229,19 +230,35 @@ export class MatchScene {
     if (this.playerScore >= 5 || this.aiScore >= 5) {
       const won = this.playerScore > this.aiScore;
       const beforeTrophies = this.game.save.profile.trophies;
+      let trophyDelta = 0;
       if (this.modeRanked) {
-        this.game.progression.onMatchResult({ won, spikes: this.stats.spikes, specials: this.stats.specials });
+        trophyDelta = this.game.progression.onMatchResult({ won, spikes: this.stats.spikes, specials: this.stats.specials });
       }
-      const trophyDelta = this.game.save.profile.trophies - beforeTrophies;
-      this.game.save.currencies.packs += won ? 1 : 0;
+      const afterTrophies = this.game.save.profile.trophies;
+      const roadProgress = this.game.progression.evaluateRoadProgress(beforeTrophies, afterTrophies);
+      const earnedCoins = won ? 60 : 30;
+      const matchBonus = won ? { type: 'pack', amount: 1, label: 'Victory Capsule' } : { type: 'coins', amount: 30, label: 'Match Coins' };
+      if (won) this.game.save.currencies.packs += 1;
       this.game.save.lastReward = won ? 'Win bonus: +1 capsule' : 'Match bonus: +30 coins';
       this.roundOver = true;
       this.player.setResultPose(won);
       this.ai.setResultPose(!won);
       this.game.audio.play(won ? 'victory' : 'defeat');
-      this.game.ui.showResultBanner(won, { trophies: trophyDelta, spikes: this.stats.spikes, specials: this.stats.specials });
-      this.game.ui.toast(won ? 'Crowd goes wild!' : 'Reset and run it back');
-      setTimeout(() => this.game.changeScene('menu'), 1700);
+      this.game.showMatchResults({
+        won,
+        ranked: this.modeRanked,
+        playerScore: this.playerScore,
+        aiScore: this.aiScore,
+        spikes: this.stats.spikes,
+        specials: this.stats.specials,
+        trophyDelta,
+        beforeTrophies,
+        afterTrophies,
+        roadProgress,
+        earnedCoins,
+        matchBonus,
+        matchup: this.matchup,
+      });
       return;
     }
 
