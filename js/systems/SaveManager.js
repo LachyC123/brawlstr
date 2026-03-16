@@ -1,6 +1,6 @@
 import { STARTING_UNLOCKS } from '../data/characters.js';
 
-const KEY = 'skyspike_legends_save_v1';
+const KEY = 'skyspike_legends_save_v2';
 
 export class SaveManager {
   load() {
@@ -34,6 +34,7 @@ export class SaveManager {
           sfxEnabled: true,
         },
       },
+      customizations: {},
     };
   }
 }

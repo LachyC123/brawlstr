@@ -465,3 +465,54 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
 @keyframes scanMove { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
 @keyframes cardRise { from { transform: translateY(14px) scale(.96); opacity: 0; } 70% { transform: translateY(-2px) scale(1.01); opacity: 1; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
+.char-picker {
+  width: 100%;
+  margin-top: 6px;
+  border-radius: 10px;
+  border: 2px solid #89bcff;
+  background: rgba(11, 27, 63, 0.9);
+  color: #e6f2ff;
+  font-weight: 700;
+  padding: 8px;
+}
+.customization-preview { text-align: center; overflow: hidden; }
+.preview-glow {
+  position: absolute; inset: 12px;
+  border-radius: 12px;
+  background: radial-gradient(circle, rgba(255, 212, 139, 0.28), transparent 65%);
+  animation: pulseGlow 1.8s ease-in-out infinite;
+}
+.portrait.custom {
+  width: 170px;
+  height: 170px;
+  border-radius: 16px;
+  border: 3px solid #ffd591;
+  box-shadow: 0 0 18px rgba(255, 202, 127, 0.35);
+  margin: 0 auto 8px;
+  image-rendering: pixelated;
+}
+.custom-controls { display: grid; gap: 10px; max-height: 42vh; overflow: auto; }
+.custom-category { display: grid; gap: 6px; }
+.swatch-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.swatch-btn {
+  pointer-events: auto;
+  border-radius: 10px;
+  border: 2px solid #7ca7ea;
+  background: linear-gradient(180deg, rgba(36, 61, 120, 0.95), rgba(18, 33, 74, 0.96));
+  color: #e6f2ff;
+  min-height: 46px;
+  font-weight: 700;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+}
+.swatch-btn em { font-style: normal; font-size: 10px; color: #ffe2ac; }
+.swatch-btn.equipped { border-color: #ffd89b; box-shadow: 0 0 0 2px rgba(255, 219, 149, 0.2); transform: translateY(-1px); }
+.results-fighters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  text-align: center;
+  margin: 8px 0;
+}

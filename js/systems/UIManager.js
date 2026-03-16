@@ -5,9 +5,14 @@ export class UIManager {
     this.layer = layer;
     this.game = game;
     this.lastHudState = null;
+    this.previewAnim = null;
   }
 
-  clear() { this.layer.innerHTML = ''; }
+  clear() {
+    if (this.previewAnim) cancelAnimationFrame(this.previewAnim);
+    this.previewAnim = null;
+    this.layer.innerHTML = '';
+  }
 
   button(label, onClick, cls = 'main-btn') {
     const b = document.createElement('button');
@@ -99,6 +104,7 @@ export class UIManager {
     navGrid.append(
       this.button('Brawler Roster', () => this.game.changeScene('roster'), 'main-btn alt'),
       this.button('Trophy Road', () => this.game.changeScene('road'), 'main-btn alt'),
+      this.button('Customization', () => this.game.openCustomization(), 'main-btn alt'),
       this.button('Open Capsule', () => this.game.changeScene('rewards')),
       this.button('Quick Training', () => this.game.changeScene('tutorial'), 'ghost-btn')
     );
@@ -178,9 +184,115 @@ export class UIManager {
 
     const row = document.createElement('div');
     row.className = 'btn-row two';
+    row.append(this.button('Customize', () => this.game.openCustomization(selected.id), 'main-btn alt'));
     row.append(this.button('Back', () => this.game.changeScene('menu')));
     wrap.append(showcase, grid, row);
     this.layer.append(wrap);
+  }
+
+
+  renderCustomization(characterId) {
+    this.clear();
+    const roster = this.game.characterSystem.list().filter((c) => c.unlocked);
+    const selectedChar = roster.find((c) => c.id === characterId) || roster[0];
+    const options = selectedChar.customizationOptions;
+    const selected = { ...selectedChar.customization };
+
+    const wrap = this.screenShell('Character Customization', 'Style Lab', 'Tune your loadout, signature colors, and court identity.');
+
+    const top = document.createElement('section');
+    top.className = 'panel customization-top';
+    top.innerHTML = `<div class="subtitle">Brawler</div><select class="char-picker"></select>`;
+    const picker = top.querySelector('.char-picker');
+    roster.forEach((c) => {
+      const o = document.createElement('option');
+      o.value = c.id;
+      o.textContent = c.name;
+      if (c.id === selectedChar.id) o.selected = true;
+      picker.append(o);
+    });
+    picker.addEventListener('change', () => this.game.openCustomization(picker.value));
+
+    const preview = document.createElement('section');
+    preview.className = 'panel customization-preview';
+    preview.innerHTML = `
+      <div class="preview-glow"></div>
+      <canvas class="portrait custom" width="170" height="170"></canvas>
+      <div class="preview-meta"><div class="char-name">${selectedChar.name}</div><div class="mission-meta">${selectedChar.role} • ${selectedChar.rarity}</div></div>
+    `;
+
+    const controls = document.createElement('section');
+    controls.className = 'panel custom-controls';
+    controls.innerHTML = '<div class="section-label">Cosmetics</div>';
+
+    const makeCategory = (label, key, list) => {
+      const block = document.createElement('div');
+      block.className = 'custom-category';
+      const title = document.createElement('div');
+      title.className = 'subtitle';
+      title.textContent = label;
+      const row = document.createElement('div');
+      row.className = 'swatch-row';
+      list.forEach((item) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `swatch-btn ${selected[key] === item.id ? 'equipped' : ''}`;
+        btn.innerHTML = `<span>${item.name}</span>${selected[key] === item.id ? '<em>Equipped</em>' : ''}`;
+        btn.addEventListener('click', () => {
+          selected[key] = item.id;
+          this.game.saveCustomization(selectedChar.id, selected);
+          this.renderCustomization(selectedChar.id);
+        });
+        row.append(btn);
+      });
+      block.append(title, row);
+      return block;
+    };
+
+    controls.append(
+      makeCategory('Primary / Accent Palette', 'palette', options.palettes),
+      makeCategory('Outfit Set', 'outfit', options.outfits),
+      makeCategory('Accessory', 'accessory', options.accessories),
+      makeCategory('Ball Skin', 'ballSkin', options.ballSkins.map((id) => ({ id, name: id[0].toUpperCase() + id.slice(1) })))
+    );
+
+    const actions = document.createElement('div');
+    actions.className = 'btn-row two';
+    actions.append(
+      this.button('Reset Default', () => { this.game.resetCustomization(selectedChar.id); this.renderCustomization(selectedChar.id); }, 'ghost-btn'),
+      this.button('Back', () => this.game.changeScene('menu'), 'main-btn alt')
+    );
+
+    wrap.append(top, preview, controls, actions);
+    this.layer.append(wrap);
+
+    const canvas = preview.querySelector('canvas');
+    const tick = () => {
+      if (!canvas.isConnected) return;
+      const previewChar = this.game.characterSystem.get(selectedChar.id);
+      this.drawPreviewPortrait(canvas, previewChar);
+      this.previewAnim = requestAnimationFrame(tick);
+    };
+    tick();
+  }
+
+  drawPreviewPortrait(canvas, char) {
+    const ctx = canvas.getContext('2d');
+    const t = performance.now() * 0.006;
+    const [a, b] = char.cardGradient;
+    const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    g.addColorStop(0, a);
+    g.addColorStop(1, b);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    ctx.fillRect(10, 10, canvas.width - 20, 6);
+    ctx.save();
+    ctx.translate(canvas.width * 0.5, canvas.height * 0.8 + Math.sin(t) * 3);
+    const pulse = 0.96 + Math.sin(t * 1.2) * 0.04;
+    ctx.scale(pulse, pulse);
+    this.game.drawCharacterSprite(ctx, char, 0, 0, 2.2);
+    ctx.restore();
   }
 
   renderRoad(road, trophies) {
@@ -424,6 +536,11 @@ export class UIManager {
         <div class="results-headline">${payload.won ? 'VICTORY' : 'DEFEAT'}</div>
         <div class="scoreline">${payload.playerScore} - ${payload.aiScore}</div>
 
+        <section class="results-fighters">
+          <div><canvas class="portrait" width="64" height="64"></canvas><div class="subtitle">YOU</div></div>
+          <div><canvas class="portrait" width="64" height="64"></canvas><div class="subtitle">CPU</div></div>
+        </section>
+
         <section class="trophy-delta ${positive ? 'up' : 'down'}">
           <div class="subtitle">Trophy Change</div>
           <div class="delta-value">🏆 <span id="deltaVal">${signed}</span></div>
@@ -449,6 +566,12 @@ export class UIManager {
       </div>
     `;
     this.layer.append(shell);
+
+    const portraits = shell.querySelectorAll('.results-fighters canvas');
+    if (payload.matchup) {
+      this.drawPortrait(portraits[0], payload.matchup.player.character);
+      this.drawPortrait(portraits[1], payload.matchup.opponent.character);
+    }
 
     const rematchBtn = shell.querySelector('#rematchBtn');
     const homeBtn = shell.querySelector('#homeBtn');

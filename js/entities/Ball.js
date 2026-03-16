@@ -1,5 +1,5 @@
 export class Ball {
-  constructor(x, y) {
+  constructor(x, y, skin = null) {
     this.x = x;
     this.y = y;
     this.vx = 0;
@@ -12,6 +12,7 @@ export class Ball {
     this.squash = 0;
     this.flash = 0;
     this.speedLines = 0;
+    this.skin = skin || { shell: ['#ffffff', '#fff5cb', '#e6c37b'], seam: '#9e6133', trail: '#a8e4ff', igniteTrail: '#ff9960' };
   }
 
   serve(toRight = true) {
@@ -64,8 +65,8 @@ export class Ball {
       ctx.translate(t.x, t.y);
       ctx.rotate(Math.atan2(this.vy, this.vx));
       ctx.fillStyle = this.ignite > 0
-        ? `rgba(255, 153, 96, ${t.a * (0.28 + intense * 0.36)})`
-        : `rgba(168, 228, 255, ${t.a * (0.24 + intense * 0.32)})`;
+        ? `rgba(${this.hexToRgb(this.skin.igniteTrail)}, ${t.a * (0.28 + intense * 0.36)})`
+        : `rgba(${this.hexToRgb(this.skin.trail)}, ${t.a * (0.24 + intense * 0.32)})`;
       ctx.fillRect(-t.r - t.elongation, -t.r * 0.7, t.r * 2 + t.elongation * 1.5, t.r * 1.4);
       ctx.fillStyle = this.ignite > 0
         ? `rgba(255, 229, 173, ${t.a * 0.25})`
@@ -86,8 +87,8 @@ export class Ball {
       for (let i = 0; i < lineCount; i += 1) {
         const offset = (i - lineCount * 0.5) * 4;
         ctx.strokeStyle = this.ignite > 0
-          ? `rgba(255,154,100,${lineAlpha})`
-          : `rgba(210,235,255,${lineAlpha})`;
+          ? `rgba(${this.hexToRgb(this.skin.igniteTrail)},${lineAlpha})`
+          : `rgba(${this.hexToRgb(this.skin.trail)},${lineAlpha})`;
         ctx.lineWidth = 2 + i * 0.4;
         ctx.beginPath();
         ctx.moveTo(-this.vx * 0.01, -this.vy * 0.01 + offset);
@@ -97,18 +98,18 @@ export class Ball {
     }
 
     const shell = ctx.createRadialGradient(-4, -6, 2, 0, 0, this.radius + 2);
-    shell.addColorStop(0, this.ignite > 0 ? '#ffe6bd' : '#ffffff');
-    shell.addColorStop(0.45, this.ignite > 0 ? '#ffb06f' : '#fff5cb');
-    shell.addColorStop(1, this.ignite > 0 ? '#da6f3f' : '#e6c37b');
+    shell.addColorStop(0, this.ignite > 0 ? '#ffe6bd' : this.skin.shell[0]);
+    shell.addColorStop(0.45, this.ignite > 0 ? '#ffb06f' : this.skin.shell[1]);
+    shell.addColorStop(1, this.ignite > 0 ? '#da6f3f' : this.skin.shell[2]);
     ctx.fillStyle = shell;
     ctx.beginPath();
     ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.strokeStyle = '#6d4322';
+    ctx.strokeStyle = this.skin.seam;
     ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.strokeStyle = '#9e6133';
+    ctx.strokeStyle = this.skin.seam;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(0, 0, this.radius - 4, -0.85, 0.95);
@@ -129,5 +130,12 @@ export class Ball {
       ctx.globalAlpha = 1;
     }
     ctx.restore();
+  }
+
+  hexToRgb(hex) {
+    const value = String(hex || '#ffffff').replace('#', '');
+    const full = value.length === 3 ? value.split('').map((c) => c + c).join('') : value;
+    const n = parseInt(full, 16);
+    return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`;
   }
 }
