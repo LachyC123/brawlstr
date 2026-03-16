@@ -8,6 +8,7 @@ import { ResultsScene } from './scenes/ResultsScene.js';
 import { TrophyRoadScene } from './scenes/TrophyRoadScene.js';
 import { RosterScene } from './scenes/RosterScene.js';
 import { RewardsScene } from './scenes/RewardsScene.js';
+import { CustomizationScene } from './scenes/CustomizationScene.js';
 import { SaveManager } from '../systems/SaveManager.js';
 import { InputManager } from '../systems/InputManager.js';
 import { AudioManager } from '../systems/AudioManager.js';
@@ -26,6 +27,7 @@ export class Game {
     this.save = this.saveManager.load();
     this.save.settings = this.save.settings || { audio: { sfxEnabled: true } };
     this.save.settings.audio = this.save.settings.audio || { sfxEnabled: true };
+    this.save.customizations = this.save.customizations || {};
 
     this.input = new InputManager(canvas, uiLayer);
     this.audio = new AudioManager({ enabled: this.save.settings.audio.sfxEnabled });
@@ -46,6 +48,7 @@ export class Game {
       road: new TrophyRoadScene(this),
       roster: new RosterScene(this),
       rewards: new RewardsScene(this),
+      customization: new CustomizationScene(this),
       tutorial: {
         enter: () => this.ui.renderTutorial(this.tutorialStep),
         update: () => {},
@@ -102,6 +105,24 @@ export class Game {
     };
 
     this.changeScene('matchmaking', this.pendingMatch);
+  }
+
+  openCustomization(id = this.save.profile.selectedCharacter) {
+    this.changeScene('customization', id);
+  }
+
+  saveCustomization(id, selection) {
+    this.characterSystem.setCustomization(id, selection);
+    this.audio.play('menuConfirm');
+    this.ui.toast('Customization saved');
+    this.persist();
+  }
+
+  resetCustomization(id) {
+    this.characterSystem.resetCustomization(id);
+    this.audio.play('uiTap');
+    this.ui.toast('Defaults restored');
+    this.persist();
   }
 
   launchMatchFromFlow(context) {

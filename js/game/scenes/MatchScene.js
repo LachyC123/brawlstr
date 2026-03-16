@@ -51,7 +51,7 @@ export class MatchScene {
     this.matchup = matchup;
     this.player = new Player(170, this.floorY, selected);
     this.ai = new Opponent(540, this.floorY, aiChar, true);
-    this.ball = new Ball(180, 820);
+    this.ball = new Ball(180, 820, selected.ballSkin);
     this.net = new Net(360, this.floorY + 5);
     this.roundOver = false;
     this.scorePause = 0;
@@ -342,7 +342,7 @@ export class MatchScene {
       return;
     }
 
-    this.ball = new Ball(playerScored ? 180 : 540, 820);
+    this.ball = new Ball(playerScored ? 180 : 540, 820, this.player.character.ballSkin);
     this.ball.registerImpact(0.25);
     this.ball.serve(playerScored);
     this.serveFlash = 0.42;
