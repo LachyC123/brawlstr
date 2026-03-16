@@ -9,6 +9,9 @@ export class Ball {
     this.trail = [];
     this.ignite = 0;
     this.spin = 0;
+    this.squash = 0;
+    this.flash = 0;
+    this.speedLines = 0;
   }
 
   serve(toRight = true) {
@@ -28,6 +31,10 @@ export class Ball {
       this.vy += 290 * dt;
     }
 
+    this.squash = Math.max(0, this.squash - dt * 9);
+    this.flash = Math.max(0, this.flash - dt * 8);
+    this.speedLines = Math.max(0, this.speedLines - dt * 3.8);
+
     const speed = Math.hypot(this.vx, this.vy);
     this.trail.push({
       x: this.x - this.vx * dt * 0.26,
@@ -41,6 +48,13 @@ export class Ball {
     this.trail.forEach((t) => {
       t.a *= 0.84;
     });
+  }
+
+  registerImpact(power = 0.5) {
+    const p = Math.max(0, Math.min(1.8, power));
+    this.squash = Math.max(this.squash, 0.12 + p * 0.28);
+    this.flash = Math.max(this.flash, 0.1 + p * 0.42);
+    this.speedLines = Math.max(this.speedLines, p * 1.15);
   }
 
   draw(ctx) {
@@ -63,13 +77,23 @@ export class Ball {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.spin);
-    if (Math.abs(this.vx) > 760 || this.ignite > 0) {
-      ctx.strokeStyle = this.ignite > 0 ? 'rgba(255,154,100,.5)' : 'rgba(210,235,255,.45)';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(-this.vx * 0.012, -this.vy * 0.012);
-      ctx.lineTo(-this.vx * 0.028, -this.vy * 0.028);
-      ctx.stroke();
+    const motionAmp = Math.min(1, Math.hypot(this.vx, this.vy) / 1200) + this.speedLines * 0.22;
+    ctx.scale(1 + this.squash * 0.45 + motionAmp * 0.2, 1 - this.squash * 0.35);
+
+    if (this.speedLines > 0.15 || Math.abs(this.vx) > 760 || this.ignite > 0) {
+      const lineCount = 2 + Math.floor(this.speedLines * 4);
+      const lineAlpha = Math.min(0.45, 0.16 + this.speedLines * 0.2 + motionAmp * 0.18);
+      for (let i = 0; i < lineCount; i += 1) {
+        const offset = (i - lineCount * 0.5) * 4;
+        ctx.strokeStyle = this.ignite > 0
+          ? `rgba(255,154,100,${lineAlpha})`
+          : `rgba(210,235,255,${lineAlpha})`;
+        ctx.lineWidth = 2 + i * 0.4;
+        ctx.beginPath();
+        ctx.moveTo(-this.vx * 0.01, -this.vy * 0.01 + offset);
+        ctx.lineTo(-this.vx * (0.022 + i * 0.004), -this.vy * (0.022 + i * 0.004) + offset * 0.8);
+        ctx.stroke();
+      }
     }
 
     const shell = ctx.createRadialGradient(-4, -6, 2, 0, 0, this.radius + 2);
@@ -97,6 +121,13 @@ export class Ball {
     ctx.fillRect(-8, -8, 12, 3);
     ctx.fillStyle = 'rgba(0,0,0,.14)';
     ctx.fillRect(-9, 5, 14, 3);
+
+    if (this.flash > 0.02) {
+      ctx.globalAlpha = Math.min(0.75, this.flash);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-this.radius, -this.radius, this.radius * 2, this.radius * 2);
+      ctx.globalAlpha = 1;
+    }
     ctx.restore();
   }
 }

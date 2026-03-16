@@ -274,24 +274,32 @@ export class UIManager {
   renderMatchHUD(state) {
     const prev = this.lastHudState;
     this.lastHudState = { ...state };
-    const scorePulse = prev && (prev.playerScore !== state.playerScore || prev.aiScore !== state.aiScore) ? 'score-pop' : '';
+    const scoreChanged = prev && (prev.playerScore !== state.playerScore || prev.aiScore !== state.aiScore);
+    const scorePulse = scoreChanged ? 'score-pop' : '';
+    const scoreBurst = scoreChanged || state.scoreBurst > 0.15 ? 'score-burst' : '';
     const energyPulse = state.specialReady ? 'ready' : '';
+    const rallyHot = state.rallyExcitement > 0.35 ? 'hot' : '';
+    const matchPoint = state.matchPoint ? 'match-point' : '';
 
     this.clear();
     const wrap = document.createElement('div');
-    wrap.className = 'match-overlay';
+    wrap.className = `match-overlay ${scoreBurst} ${matchPoint}`;
     wrap.innerHTML = `
       <div class="hud-top ${scorePulse}">
-        <div class="hud-bubble"><span class="subtitle">YOU</span><strong>${state.playerScore}</strong><em class="hud-tag">🏆</em></div>
-        <div class="hud-bubble hud-center">
+        <div class="hud-bubble ${scoreChanged ? 'score-bounce' : ''}"><span class="subtitle">YOU</span><strong>${state.playerScore}</strong><em class="hud-tag">🏆</em></div>
+        <div class="hud-bubble hud-center ${rallyHot}">
           <span class="subtitle">RALLY</span><strong>${state.rally}</strong>
           <div class="event-chip">${state.eventText || 'Keep pressure high'}</div>
+          <div class="rally-pips"><span></span><span></span><span></span></div>
         </div>
-        <div class="hud-bubble" style="text-align:right;"><span class="subtitle">CPU</span><strong>${state.aiScore}</strong><em class="hud-tag">⚔️</em></div>
+        <div class="hud-bubble ${scoreChanged ? 'score-bounce' : ''}" style="text-align:right;"><span class="subtitle">CPU</span><strong>${state.aiScore}</strong><em class="hud-tag">⚔️</em></div>
       </div>
       <div class="special-meter ${energyPulse}">
         <div class="special-fill" style="width:${Math.max(0, Math.min(100, state.energy))}%"></div>
         <span class="meter-text">SPECIAL ${Math.floor(state.energy)}%</span>
+      </div>
+      <div class="match-cues">
+        ${state.matchPoint ? '<div class="match-point-cue">MATCH POINT</div>' : ''}
       </div>
       <button type="button" class="pause-chip">II Pause</button>
       <div class="touch-controls">

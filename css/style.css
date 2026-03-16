@@ -231,6 +231,46 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
 .special-meter span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; font-weight: 900; text-shadow: 0 1px 0 #0f1b3d; }
 .special-fill { height: 100%; background: linear-gradient(90deg, #58c7ff, #71f8d4, #ffe286); transition: width .16s linear; box-shadow: inset 0 0 10px rgba(255,255,255,0.28); }
 .special-meter.ready { border-color: #ffd589; box-shadow: 0 0 10px rgba(255,214,134,0.5); animation: pulseGlow 1s ease-in-out infinite; }
+
+.match-overlay.score-burst::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 64px;
+  width: 220px;
+  height: 120px;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(255, 226, 149, 0.45), rgba(255, 226, 149, 0));
+  animation: burstFade .45s ease;
+}
+.match-overlay.match-point::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 132, 125, 0.1), rgba(255, 132, 125, 0));
+  pointer-events: none;
+}
+.hud-bubble.score-bounce strong { animation: digitBounce .4s ease; }
+.hud-center.hot { border-color: #ffd091; box-shadow: 0 0 14px rgba(255, 196, 118, .4); }
+.rally-pips { display: flex; justify-content: center; gap: 4px; margin-top: 4px; }
+.rally-pips span {
+  width: 7px; height: 3px; border-radius: 999px; background: rgba(255, 228, 166, 0.42);
+  animation: pipPulse 1.2s ease-in-out infinite;
+}
+.rally-pips span:nth-child(2) { animation-delay: .12s; }
+.rally-pips span:nth-child(3) { animation-delay: .24s; }
+.match-cues { position: absolute; left: 0; right: 0; top: 116px; display: grid; place-items: center; pointer-events: none; }
+.match-point-cue {
+  padding: 6px 10px;
+  border: 2px solid #ffd0a8;
+  border-radius: 999px;
+  background: rgba(55, 21, 24, 0.86);
+  color: #ffe7cf;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  letter-spacing: .04em;
+  animation: matchPointCue .9s ease-in-out infinite;
+}
 .pause-chip {
   pointer-events: auto; position: absolute; right: 16px; top: 124px; border: 2px solid #89bcff; border-radius: 10px;
   background: rgba(11, 27, 63, .85); color: #dceeff; font-size: 11px; font-weight: 800; padding: 6px 8px;
@@ -292,6 +332,11 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
 @keyframes rewardDrift { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 @keyframes rotateSlow { to { transform: rotate(360deg); } }
 
+
+@keyframes burstFade { from { opacity: 1; transform: translateX(-50%) scale(.88);} to { opacity: 0; transform: translateX(-50%) scale(1.2);} }
+@keyframes digitBounce { 0% { transform: translateY(4px) scale(.88);} 60% { transform: translateY(-2px) scale(1.12);} 100% { transform: translateY(0) scale(1);} }
+@keyframes pipPulse { 0%,100% { opacity: .35; transform: scaleX(1);} 50% { opacity: 1; transform: scaleX(1.45);} }
+@keyframes matchPointCue { 0%,100% { transform: translateY(0); box-shadow: 0 0 0 rgba(255,162,125,0.2);} 50% { transform: translateY(-2px); box-shadow: 0 0 14px rgba(255,162,125,0.35);} }
 @media (max-width: 560px) {
   .screen { padding: 12px; gap: 9px; }
   .currency-bar.premium { grid-template-columns: repeat(2, 1fr); }
