@@ -7,7 +7,7 @@ export class Net {
   }
 
   draw(ctx) {
-    ctx.fillStyle = '#4f74ad';
+    ctx.fillStyle = '#3b5f95';
     ctx.fillRect(this.x - this.width / 2 - 3, this.floorY - this.height, this.width + 6, this.height + 10);
 
     const poleGrad = ctx.createLinearGradient(this.x - this.width / 2, this.floorY - this.height, this.x + this.width / 2, this.floorY);
@@ -16,14 +16,19 @@ export class Net {
     ctx.fillStyle = poleGrad;
     ctx.fillRect(this.x - this.width / 2, this.floorY - this.height, this.width, this.height);
 
-    ctx.fillStyle = '#f8fdff';
+    ctx.fillStyle = '#eef6ff';
     ctx.fillRect(this.x - 34, this.floorY - this.height - 8, 68, 8);
 
-    ctx.fillStyle = '#d8ecff';
-    for (let y = this.floorY - this.height + 10; y < this.floorY; y += 12) ctx.fillRect(this.x - 30, y, 60, 2);
+    ctx.fillStyle = '#d7e7fd';
+    for (let y = this.floorY - this.height + 8; y < this.floorY; y += 10) ctx.fillRect(this.x - 30, y, 60, 1);
 
-    ctx.fillStyle = '#79abeb';
-    for (let x = -30; x <= 28; x += 8) ctx.fillRect(this.x + x, this.floorY - this.height + 8, 2, this.height - 8);
+    ctx.fillStyle = '#8cb9ef';
+    for (let x = -30; x <= 28; x += 6) ctx.fillRect(this.x + x, this.floorY - this.height + 8, 1, this.height - 8);
+
+    ctx.fillStyle = 'rgba(255, 233, 174, 0.2)';
+    for (let y = this.floorY - this.height + 12; y < this.floorY - 8; y += 18) {
+      ctx.fillRect(this.x - 28, y, 56, 1);
+    }
 
     ctx.fillStyle = 'rgba(255,255,255,0.16)';
     ctx.fillRect(this.x - 28, this.floorY - this.height + 12, 16, this.height - 24);

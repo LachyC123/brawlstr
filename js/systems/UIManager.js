@@ -95,7 +95,7 @@ export class UIManager {
     nav.className = 'panel action-matrix';
     nav.innerHTML = '<div class="section-label">Secondary Actions</div>';
     const navGrid = document.createElement('div');
-    navGrid.className = 'btn-row two';
+    navGrid.className = 'btn-row two stagger';
     navGrid.append(
       this.button('Brawler Roster', () => this.game.changeScene('roster'), 'main-btn alt'),
       this.button('Trophy Road', () => this.game.changeScene('road'), 'main-btn alt'),
@@ -324,7 +324,7 @@ export class UIManager {
   showMatchIntro(text) {
     const intro = document.createElement('div');
     intro.className = 'cinematic-banner';
-    intro.innerHTML = `<div class="subtitle">Match Start</div><strong>${text}</strong>`;
+    intro.innerHTML = `<div class="subtitle">Match Start</div><strong>${text}</strong><div class="cinematic-line"></div>`;
     this.layer.append(intro);
     setTimeout(() => intro.remove(), 1400);
   }
@@ -356,6 +356,7 @@ export class UIManager {
     wrap.className = 'flow-overlay matchmaking';
     wrap.innerHTML = `
       <div class="flow-bg"></div>
+      <div class="flow-sparks"></div>
       <div class="flow-panel">
         <div class="subtitle">${modeLabel}</div>
         <div class="title">MATCHMAKING</div>
@@ -373,6 +374,7 @@ export class UIManager {
     wrap.className = 'flow-overlay versus';
     wrap.innerHTML = `
       <div class="flow-bg glow"></div>
+      <div class="flow-sparks"></div>
       <div class="versus-label">${context.modeLabel} • ${context.arenaLabel}</div>
       <div class="versus-shell">
         <section class="versus-card player">
@@ -408,6 +410,7 @@ export class UIManager {
 
     shell.innerHTML = `
       <div class="flow-bg"></div>
+      <div class="flow-sparks"></div>
       <div class="results-shell ${payload.won ? 'win' : 'lose'}">
         <div class="subtitle">${payload.ranked ? 'Trophy Match Complete' : 'Casual Match Complete'}</div>
         <div class="results-headline">${payload.won ? 'VICTORY' : 'DEFEAT'}</div>

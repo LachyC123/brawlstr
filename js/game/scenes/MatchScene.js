@@ -157,9 +157,10 @@ export class MatchScene {
         vx: Math.cos(a) * power,
         vy: Math.sin(a) * power - (style === 'dust' ? 40 : 10),
         color,
-        life: 0.34 + Math.random() * 0.24,
+        life: 0.22 + Math.random() * 0.2,
         gravity: style === 'ring' ? 120 : style === 'dust' ? 540 : 360,
         style,
+        size: style === 'spark' ? 2 + Math.random() * 2.4 : style === 'dust' ? 5 + Math.random() * 3 : 6,
       });
     }
   }
@@ -292,7 +293,7 @@ export class MatchScene {
 
     const courtGradient = ctx.createLinearGradient(0, this.floorY - 10, 0, this.game.height);
     courtGradient.addColorStop(0, '#2f6297');
-    courtGradient.addColorStop(1, '#1f3f70');
+    courtGradient.addColorStop(1, '#1c3761');
     ctx.fillStyle = courtGradient;
     ctx.fillRect(0, this.floorY, this.game.width, this.game.height - this.floorY);
 
@@ -314,6 +315,15 @@ export class MatchScene {
       ctx.stroke();
     }
 
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 18; i += 1) {
+      ctx.beginPath();
+      ctx.moveTo(i * 40, this.floorY + 2);
+      ctx.lineTo(i * 40 + 24, this.floorY + 18);
+      ctx.stroke();
+    }
+
     this.ambient.forEach((p) => {
       ctx.fillStyle = `rgba(180, 228, 255, ${0.1 + p.size * 0.08})`;
       ctx.fillRect(p.x, p.y, p.size + 1, p.size + 1);
@@ -325,9 +335,9 @@ export class MatchScene {
       ctx.fillRect(36 + i * 82, this.floorY - 204 + (i % 2) * 12, 34, 6);
     }
 
-    ctx.fillStyle = 'rgba(6, 12, 34, 0.28)';
-    ctx.fillRect(this.player.x - 32, this.floorY - 2, 64, 8);
-    ctx.fillRect(this.ai.x - 32, this.floorY - 2, 64, 8);
+    ctx.fillStyle = 'rgba(6, 12, 34, 0.24)';
+    ctx.fillRect(this.player.x - 30, this.floorY - 2, 60, 6);
+    ctx.fillRect(this.ai.x - 30, this.floorY - 2, 60, 6);
 
     this.net.draw(ctx);
     this.player.draw(ctx);
@@ -339,14 +349,14 @@ export class MatchScene {
       ctx.globalAlpha = alpha;
       if (p.style === 'dust') {
         ctx.fillStyle = p.color;
-        ctx.fillRect(p.x - 6, p.y - 2, 12, 4);
+        ctx.fillRect(p.x - p.size, p.y - 2, p.size * 2, 3);
       } else if (p.style === 'ring') {
         ctx.strokeStyle = p.color;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(p.x - 3, p.y - 3, 7, 7);
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(p.x - 3, p.y - 3, 6, 6);
       } else {
         ctx.fillStyle = p.color;
-        ctx.fillRect(p.x, p.y, 3, 3);
+        ctx.fillRect(p.x, p.y, p.size, Math.max(1.5, p.size * 0.7));
       }
       ctx.globalAlpha = 1;
     });
