@@ -20,6 +20,15 @@ export class MatchScene {
     this.eventText = 'Match start';
     this.eventTimer = 0;
     this.serveFlash = 0;
+    this.scorePause = 0;
+    this.scorePulse = 0;
+    this.scoreBurst = 0;
+    this.matchPoint = false;
+    this.rallyExcitement = 0;
+    this.crowdBurst = 0;
+    this.matchStartZoom = 0;
+    this.matchPointPulse = 0;
+    this.transitionPulse = 0;
   }
 
   enter(modeRanked = true, matchup = null) {
@@ -45,8 +54,16 @@ export class MatchScene {
     this.ball = new Ball(180, 820);
     this.net = new Net(360, this.floorY + 5);
     this.roundOver = false;
+    this.scorePause = 0;
+    this.scorePulse = 0;
+    this.scoreBurst = 0;
+    this.rallyExcitement = 0;
+    this.crowdBurst = 0;
+    this.matchPointPulse = 0;
     this.celebrate = 0;
-    this.serveFlash = 0.35;
+    this.serveFlash = 0.45;
+    this.matchStartZoom = 0.8;
+    this.transitionPulse = 0.8;
     this.eventText = 'Opening serve';
     this.eventTimer = 1;
     this.difficulty = Math.min(0.92, 0.45 + this.game.save.profile.trophies / 900);
@@ -64,6 +81,11 @@ export class MatchScene {
       energy: this.player.energy,
       specialReady: this.player.specialReady,
       eventText: this.eventText,
+      scorePulse: this.scorePulse,
+      scoreBurst: this.scoreBurst,
+      rallyExcitement: this.rallyExcitement,
+      matchPoint: this.matchPoint,
+      matchPointPulse: this.matchPointPulse,
     };
   }
 
@@ -74,6 +96,18 @@ export class MatchScene {
 
   update(dt) {
     if (this.roundOver) return;
+    if (this.scorePause > 0) {
+      this.scorePause -= dt;
+      this.updateParticles(dt);
+      this.shake *= 0.8;
+      this.scorePulse = Math.max(0, this.scorePulse - dt * 2.2);
+      this.scoreBurst = Math.max(0, this.scoreBurst - dt * 2.4);
+      this.matchStartZoom = Math.max(0, this.matchStartZoom - dt * 1.9);
+      this.transitionPulse = Math.max(0, this.transitionPulse - dt * 2.4);
+      this.game.ui.renderMatchHUD(this.hudState());
+      return;
+    }
+
     if (this.hitStop > 0) {
       this.hitStop -= dt;
       return;
@@ -89,6 +123,7 @@ export class MatchScene {
     if (this.player.specialTimer > 0.52) {
       this.game.audio.play('characterSpecial');
       this.shake = 12;
+      this.transitionPulse = Math.max(this.transitionPulse, 0.5);
       this.spawnBurst(this.player.x + 20, this.player.y - 62, this.player.character.fxColor, 20, 260, 'spark');
       this.postEvent('Special unleashed!', 1.25);
     }
@@ -104,7 +139,8 @@ export class MatchScene {
 
     if (this.ball.y + this.ball.radius > this.floorY + 2) {
       this.spawnBurst(this.ball.x, this.floorY - 8, '#b6d6ff', 13, 160, 'dust');
-      this.shake = 8;
+      this.ball.registerImpact(0.8);
+      this.shake = Math.max(this.shake, 8 + this.rallyExcitement * 3);
       const playerLost = this.ball.x < 360;
       this.postEvent(playerLost ? 'Point lost' : 'Point scored', 0.9);
       this.scorePoint(!playerLost);
@@ -113,17 +149,29 @@ export class MatchScene {
     if (this.ball.x < 10 || this.ball.x > this.game.width - 10) {
       this.ball.vx *= -0.88;
       this.ball.x = Math.max(10, Math.min(this.game.width - 10, this.ball.x));
+      this.ball.registerImpact(0.45);
       this.spawnBurst(this.ball.x, this.ball.y, '#cce6ff', 6, 88, 'spark');
       this.postEvent('Wall ricochet', 0.5);
     }
 
     if (this.eventTimer > 0) this.eventTimer -= dt;
+    else if (this.matchPoint) this.eventText = 'Match point pressure';
     else if (this.rally >= 5) this.eventText = 'Hot rally!';
     else this.eventText = this.player.specialReady ? 'Special ready' : 'Keep pressure high';
+
+    this.rallyExcitement = Math.min(1, Math.max(0, (this.rally - 2) / 10));
+    this.matchPoint = (this.playerScore === 4 || this.aiScore === 4) && !this.roundOver;
+    if (this.matchPoint) this.matchPointPulse = Math.min(1, this.matchPointPulse + dt * 2.2);
+    else this.matchPointPulse = Math.max(0, this.matchPointPulse - dt * 1.8);
 
     this.shake *= 0.84;
     this.celebrate = Math.max(0, this.celebrate - dt);
     this.serveFlash = Math.max(0, this.serveFlash - dt);
+    this.scorePulse = Math.max(0, this.scorePulse - dt * 2.1);
+    this.scoreBurst = Math.max(0, this.scoreBurst - dt * 2.2);
+    this.crowdBurst = Math.max(0, this.crowdBurst - dt * 1.9);
+    this.matchStartZoom = Math.max(0, this.matchStartZoom - dt * 1.7);
+    this.transitionPulse = Math.max(0, this.transitionPulse - dt * 2.5);
     this.game.ui.renderMatchHUD(this.hudState());
   }
 
@@ -172,7 +220,9 @@ export class MatchScene {
       if (Math.abs(dx) < 48 && Math.abs(dy) < 46 && this.ball.vy > -900) {
         const pwr = actor.character.stats.power * this.game.characterSystem.statMultiplier(actor.character.id);
         const aimBonus = Math.max(0, Math.min(110, Math.abs(dx) * 2));
-        const strong = pwr > 1.02 || Math.abs(dx) > 26;
+        const incoming = Math.hypot(this.ball.vx, this.ball.vy);
+        const strong = pwr > 1.02 || Math.abs(dx) > 26 || incoming > 980;
+        const spikePower = Math.min(1.6, (pwr - 0.8) * 0.8 + Math.abs(dx) * 0.015 + incoming * 0.00065 + (this.matchPoint ? 0.18 : 0));
         this.ball.vx = side * (300 + Math.abs(dx) * 4.5 + pwr * 130 + aimBonus);
         this.ball.vy = -980 - pwr * 145;
 
@@ -182,12 +232,17 @@ export class MatchScene {
           this.ball.vy *= 1.07;
           this.ball.ignite = actor.character.id === 'flare' ? 1.2 : 0.4;
           if (actor.character.id === 'granite') this.ball.vx *= -1;
-          this.shake = 14;
+          this.ball.registerImpact(1.6);
+          this.shake = Math.max(this.shake, 14 + this.rallyExcitement * 4);
+          this.crowdBurst = Math.max(this.crowdBurst, 1);
           this.spawnBurst(this.ball.x, this.ball.y, actor.character.fxColor, 22, 260, 'spark');
+          this.spawnBurst(this.ball.x, this.ball.y, '#ffffff', 8, 220, 'ring');
           this.postEvent('Special impact!', 1);
           this.game.audio.play('spikeHit');
         } else {
-          this.spawnBurst(this.ball.x, this.ball.y, strong ? '#ffd3a2' : '#d8f0ff', strong ? 10 : 6, strong ? 160 : 105, 'spark');
+          this.ball.registerImpact(strong ? 1.2 + spikePower * 0.2 : 0.5 + spikePower * 0.25);
+          this.spawnBurst(this.ball.x, this.ball.y, strong ? '#ffd3a2' : '#d8f0ff', strong ? 12 : 7, strong ? 190 : 115, 'spark');
+          if (strong) this.spawnBurst(this.ball.x, this.ball.y, '#ffe1bf', 5, 180, 'ring');
           this.postEvent(strong ? 'Power spike!' : 'Clean touch', 0.55);
           this.game.audio.play(strong ? 'spikeHit' : 'serve');
         }
@@ -197,7 +252,9 @@ export class MatchScene {
         actor.touches += 1;
         this.stats.spikes += 1;
         this.rally += 1;
-        this.hitStop = this.rally > 6 ? 0.02 : 0.012;
+        if (this.rally > 9) this.postEvent('Rally fever!', 0.65);
+        this.hitStop = strong ? (this.matchPoint ? 0.034 : 0.024) : this.rally > 6 ? 0.02 : 0.012;
+        this.transitionPulse = Math.max(this.transitionPulse, strong ? 0.4 : 0.2);
       }
     };
 
@@ -208,10 +265,12 @@ export class MatchScene {
     if (Math.abs(this.ball.x - this.net.x) < this.net.width / 2 + this.ball.radius && this.ball.y > topY - 10) {
       this.ball.vx *= -0.83;
       this.ball.x += Math.sign(this.ball.vx) * 6;
+      this.ball.registerImpact(0.65);
       this.spawnBurst(this.net.x, this.ball.y, '#d8efff', 8, 108, 'spark');
+      this.spawnBurst(this.net.x, this.ball.y, '#ffffff', 4, 90, 'ring');
       this.player.triggerBlockPose();
       this.ai.triggerBlockPose();
-      this.shake = 6;
+      this.shake = Math.max(this.shake, 6);
       this.postEvent('Net block!', 0.7);
       this.game.audio.play('block');
     }
@@ -220,14 +279,21 @@ export class MatchScene {
   scorePoint(playerScored) {
     if (playerScored) this.playerScore += 1;
     else this.aiScore += 1;
+    const wasLongRally = this.rally >= 7;
     this.rally = 0;
-    this.celebrate = 0.55;
+    this.celebrate = playerScored ? 0.72 : 0.52;
+    this.scorePause = 0.12 + (wasLongRally ? 0.05 : 0);
+    this.scorePulse = playerScored ? 1 : 0.72;
+    this.scoreBurst = playerScored ? 1 : 0.72;
+    this.crowdBurst = Math.max(this.crowdBurst, wasLongRally ? 1 : 0.72);
+    this.transitionPulse = Math.max(this.transitionPulse, 0.7);
     this.game.audio.play('score');
 
     const clutch = Math.max(this.playerScore, this.aiScore) === 4;
     if (clutch) {
-      this.postEvent('Match point pressure!', 1.2);
-      this.shake = 10;
+      this.postEvent('MATCH POINT!', 1.3);
+      this.shake = 12;
+      this.matchPointPulse = 1;
     }
 
     if (this.playerScore >= 5 || this.aiScore >= 5) {
@@ -255,6 +321,7 @@ export class MatchScene {
       this.ai.setResultPose(!won);
       this.game.audio.play(won ? 'victory' : 'defeat');
 
+      this.transitionPulse = 1;
       setTimeout(() => {
         this.game.showMatchResults({
           won,
@@ -271,13 +338,14 @@ export class MatchScene {
           matchBonus,
           matchup: this.matchup,
         });
-      }, 420);
+      }, won ? 620 : 560);
       return;
     }
 
     this.ball = new Ball(playerScored ? 180 : 540, 820);
+    this.ball.registerImpact(0.25);
     this.ball.serve(playerScored);
-    this.serveFlash = 0.35;
+    this.serveFlash = 0.42;
     this.postEvent('Serve restart', 0.65);
     this.game.audio.play('serve');
     this.player.reset(170);
@@ -285,10 +353,16 @@ export class MatchScene {
   }
 
   render(ctx) {
-    this.game.drawArenaBackdrop(ctx, 1);
-    if (this.shake > 0.3) {
+    const arenaIntensity = 1 + this.rallyExcitement * 0.16 + this.matchPointPulse * 0.12;
+    this.game.drawArenaBackdrop(ctx, arenaIntensity);
+    const hasCameraFx = this.shake > 0.3 || this.matchStartZoom > 0.01;
+    if (hasCameraFx) {
       ctx.save();
-      ctx.translate((Math.random() - 0.5) * this.shake, (Math.random() - 0.5) * this.shake * 0.6);
+      ctx.translate((Math.random() - 0.5) * this.shake, (Math.random() - 0.5) * this.shake * 0.6 - this.matchStartZoom * 6);
+      const z = 1 + this.matchStartZoom * 0.03;
+      ctx.translate(this.game.width * 0.5, this.game.height * 0.48);
+      ctx.scale(z, z);
+      ctx.translate(-this.game.width * 0.5, -this.game.height * 0.48);
     }
 
     const courtGradient = ctx.createLinearGradient(0, this.floorY - 10, 0, this.game.height);
@@ -325,19 +399,41 @@ export class MatchScene {
     }
 
     this.ambient.forEach((p) => {
-      ctx.fillStyle = `rgba(180, 228, 255, ${0.1 + p.size * 0.08})`;
+      ctx.fillStyle = `rgba(180, 228, 255, ${0.1 + p.size * 0.08 + this.rallyExcitement * 0.1})`;
       ctx.fillRect(p.x, p.y, p.size + 1, p.size + 1);
     });
 
     for (let i = 0; i < 9; i += 1) {
-      const glow = 0.14 + Math.sin(performance.now() * 0.004 + i) * 0.06;
+      const glow = 0.14 + Math.sin(performance.now() * 0.004 + i) * 0.06 + this.rallyExcitement * 0.08;
       ctx.fillStyle = `rgba(255, 228, 146, ${glow})`;
       ctx.fillRect(36 + i * 82, this.floorY - 204 + (i % 2) * 12, 34, 6);
+    }
+
+    const crowdIntensity = 0.18 + this.rallyExcitement * 0.3 + this.crowdBurst * 0.24 + this.matchPointPulse * 0.2;
+    for (let i = 0; i < 22; i += 1) {
+      const x = 12 + i * 33;
+      const bounce = Math.sin(performance.now() * (0.007 + this.rallyExcitement * 0.004) + i * 0.9) * (2 + this.rallyExcitement * 4 + this.crowdBurst * 3);
+      const h = 16 + (i % 3) * 5;
+      ctx.fillStyle = `rgba(14, 24, 54, ${crowdIntensity})`;
+      ctx.fillRect(x, this.floorY - 224 + bounce, 18, h);
+      ctx.fillStyle = `rgba(255, 213, 149, ${0.08 + crowdIntensity * 0.3})`;
+      ctx.fillRect(x + 2, this.floorY - 224 + bounce, 14, 2);
+    }
+
+    if (this.rallyExcitement > 0.05 || this.matchPointPulse > 0.05) {
+      const pulseAlpha = 0.06 + this.rallyExcitement * 0.08 + this.matchPointPulse * 0.14;
+      ctx.fillStyle = `rgba(255, 202, 133, ${pulseAlpha})`;
+      ctx.fillRect(0, 0, this.game.width, this.floorY - 110);
     }
 
     ctx.fillStyle = 'rgba(6, 12, 34, 0.24)';
     ctx.fillRect(this.player.x - 30, this.floorY - 2, 60, 6);
     ctx.fillRect(this.ai.x - 30, this.floorY - 2, 60, 6);
+    const ballHeight = Math.max(0, Math.min(260, this.floorY - this.ball.y));
+    const shadowW = 26 - ballHeight * 0.035;
+    const shadowA = 0.28 - ballHeight * 0.0008;
+    ctx.fillStyle = `rgba(3, 8, 21, ${Math.max(0.05, shadowA)})`;
+    ctx.fillRect(this.ball.x - shadowW, this.floorY + 2, shadowW * 2, 4);
 
     this.net.draw(ctx);
     this.player.draw(ctx);
@@ -361,7 +457,7 @@ export class MatchScene {
       ctx.globalAlpha = 1;
     });
 
-    if (this.shake > 0.3) ctx.restore();
+    if (hasCameraFx) ctx.restore();
 
     if (this.celebrate > 0) {
       ctx.fillStyle = `rgba(255,238,173,${this.celebrate * 0.5})`;
@@ -371,6 +467,24 @@ export class MatchScene {
     if (this.serveFlash > 0) {
       ctx.fillStyle = `rgba(150,215,255,${this.serveFlash * 0.28})`;
       ctx.fillRect(0, 0, this.game.width, this.game.height);
+    }
+
+    if (this.scoreBurst > 0.01) {
+      const burst = this.scoreBurst * this.scoreBurst;
+      const scoreGlow = ctx.createRadialGradient(this.game.width * 0.5, 90, 20, this.game.width * 0.5, 110, 220);
+      scoreGlow.addColorStop(0, `rgba(255, 227, 155, ${0.45 * burst})`);
+      scoreGlow.addColorStop(1, 'rgba(255, 227, 155, 0)');
+      ctx.fillStyle = scoreGlow;
+      ctx.fillRect(0, 0, this.game.width, 220);
+    }
+
+    if (this.matchPointPulse > 0.02) {
+      const a = 0.06 + Math.sin(performance.now() * 0.01) * 0.03 + this.matchPointPulse * 0.08;
+      ctx.fillStyle = `rgba(255, 139, 121, ${a})`;
+      ctx.fillRect(0, 0, this.game.width, this.game.height);
+      ctx.fillStyle = '#ffe7c5';
+      ctx.font = '12px "Press Start 2P"';
+      ctx.fillText('MATCH POINT', this.game.width * 0.5 - 92, 140);
     }
 
     const matchVignette = ctx.createLinearGradient(0, 0, 0, this.game.height);
@@ -383,7 +497,7 @@ export class MatchScene {
 
     ctx.fillStyle = '#ffe2a3';
     ctx.font = '14px "Press Start 2P"';
-    const tension = this.rally > 6 ? 'Hot Rally!' : this.player.specialReady ? 'Special Ready!' : ' ';
+    const tension = this.matchPoint ? 'MATCH POINT' : this.rally > 8 ? 'Rally Fever!' : this.rally > 6 ? 'Hot Rally!' : this.player.specialReady ? 'Special Ready!' : ' ';
     ctx.fillText(tension, 24, 100);
   }
 }
