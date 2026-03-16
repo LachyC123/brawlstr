@@ -19,6 +19,7 @@
   --panel-shadow: 0 10px 0 #091230, 0 18px 28px rgba(0, 0, 0, 0.34);
   --panel-highlight: inset 0 0 0 2px rgba(158, 206, 255, 0.14), inset 0 12px 18px rgba(184, 218, 255, 0.08);
   --ui-glow: rgba(255, 208, 134, 0.4);
+  --outline-dark: #1b2748;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; }
@@ -39,7 +40,7 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
 
 .screen {
   pointer-events: auto; position: absolute; inset: 0; display: flex; flex-direction: column;
-  padding: 18px; gap: 12px; overflow: hidden; animation: screenIn 0.34s cubic-bezier(.21,.86,.31,1);
+  padding: 18px; gap: 12px; overflow: hidden; animation: screenIn 0.42s cubic-bezier(.2,.9,.28,1);
   background: linear-gradient(180deg, rgba(9, 18, 43, 0.18), rgba(5, 10, 24, 0.36));
 }
 .screen > *:not(.ambient-glow):not(.ambient-shards):not(.ambient-depth):not(.ambient-particles) { position: relative; z-index: 2; }
@@ -81,7 +82,7 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
 
 .panel {
   position: relative; background: linear-gradient(180deg, rgba(45, 74, 141, .97), rgba(18, 30, 66, .99));
-  border: var(--edge) solid #90c4ff; border-radius: var(--radius-md);
+  border: var(--edge) solid #88b8f0; border-radius: var(--radius-md);
   box-shadow: var(--panel-shadow), var(--panel-highlight);
   padding: 13px;
 }
@@ -93,8 +94,9 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
 .section-label { font-weight: 800; margin-bottom: 8px; color: #fff6ce; letter-spacing: .06em; text-transform: uppercase; font-size: 11px; }
 .section-chip { display: inline-block; padding: 3px 8px; border-radius: 999px; border: 1px solid rgba(255, 220, 152, 0.5); background: rgba(115, 74, 33, 0.42); font-size: 10px; text-transform: uppercase; letter-spacing: .07em; color: #ffeac0; margin-bottom: 6px; }
 .action-matrix { display: grid; gap: 10px; }
+.btn-row.two.stagger > *:nth-child(3), .btn-row.two.stagger > *:nth-child(4) { transform: translateY(-2px); }
 
-.hero-panel { display: grid; grid-template-columns: 1.2fr auto; align-items: center; overflow: hidden; min-height: 164px; padding: 16px; }
+.hero-panel { display: grid; grid-template-columns: 1.15fr auto; align-items: center; overflow: hidden; min-height: 168px; padding: 16px; }
 .hero-backdrop {
   position: absolute; inset: 8px; border-radius: 12px;
   background: linear-gradient(90deg, rgba(109, 168, 255, 0.14), rgba(255, 181, 96, 0.12));
@@ -102,7 +104,7 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
 }
 .hero-copy h2 { margin: 3px 0 6px; font-size: 22px; }
 .hero-copy p { margin: 0; font-size: 11px; line-height: 1.4; color: #d4e8ff; max-width: 220px; }
-.hero-actions { display: grid; gap: 10px; width: 164px; z-index: 2; }
+.hero-actions { display: grid; gap: 10px; width: 178px; z-index: 2; }
 
 .currency-bar, .btn-row { display: grid; gap: 8px; }
 .currency-bar.premium { grid-template-columns: repeat(4, 1fr); }
@@ -147,7 +149,7 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
 .mission-panel { flex: 1; overflow: auto; }
 .mission-row {
   display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 9px; border-radius: 10px;
-  background: rgba(11, 20, 47, 0.4); border: 1px solid rgba(155, 194, 255, 0.35); margin-bottom: 7px;
+  background: linear-gradient(180deg, rgba(14, 26, 58, 0.7), rgba(9, 18, 44, 0.72)); border: 1px solid rgba(155, 194, 255, 0.35); margin-bottom: 7px;
 }
 .mission-row.ready { border-color: #ffe2a6; background: rgba(81, 54, 27, 0.4); }
 .mission-title { font-size: 12px; font-weight: 700; }
@@ -271,6 +273,7 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
   pointer-events: none; animation: popScale .32s ease;
 }
 .cinematic-banner strong { font-family: 'Press Start 2P', cursive; font-size: 12px; color: #fff2c8; }
+.cinematic-line { margin-top: 8px; height: 3px; border-radius: 999px; background: linear-gradient(90deg, transparent, rgba(255, 219, 146, 0.95), transparent); animation: scanMove 1.1s ease; }
 
 @keyframes bob { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-6px);} }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -318,6 +321,17 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
 }
 .flow-bg::before { content: ""; position: absolute; inset: -30% -20%; background: repeating-radial-gradient(circle at 50% 50%, rgba(172, 213, 255, 0.08) 0 8px, transparent 8px 30px); animation: rotateSlow 24s linear infinite; }
 
+.flow-sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255, 231, 173, 0.45) 1px, transparent 1px), radial-gradient(circle, rgba(145, 211, 255, 0.35) 1px, transparent 1px);
+  background-size: 56px 56px, 74px 74px;
+  background-position: 0 0, 24px 10px;
+  opacity: .5;
+  animation: particleDrift 14s linear infinite;
+}
+
 .flow-bg.glow { animation: pulseGlow 1.3s ease-in-out infinite; }
 
 .flow-panel {
@@ -328,7 +342,8 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
   border: 3px solid #8fc0ff;
   background: linear-gradient(180deg, rgba(34, 53, 106, 0.96), rgba(17, 27, 62, 0.96));
   text-align: center;
-  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(225, 241, 255, 0.18);
+  animation: cardRise .44s cubic-bezier(.2,.95,.28,1);
 }
 
 .flow-status { margin-top: 12px; font-size: 20px; font-weight: 900; color: #fff2c5; }
@@ -360,7 +375,7 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
   font-size: clamp(32px, 8vw, 56px);
   color: #fff3b6;
   text-shadow: 0 0 20px rgba(255, 198, 107, 0.55);
-  animation: vsPop .5s ease-out both;
+  animation: vsPop .58s cubic-bezier(.2,1,.3,1) both;
 }
 .versus-name { font-size: 16px; font-weight: 900; margin-top: 8px; }
 .versus-meta { font-size: 12px; color: #ffe6ac; margin-top: 4px; }
@@ -376,7 +391,7 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
   display: grid;
   gap: 10px;
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.4);
-  animation: screenIn .36s ease;
+  animation: cardRise .48s cubic-bezier(.2,.95,.28,1);
 }
 .results-shell.win { border-color: #ffe099; }
 .results-shell.lose { border-color: #b7c2eb; }
@@ -403,3 +418,5 @@ canvas, button, img, a, #app, #ui-layer, .ctrl { -webkit-user-drag: none; touch-
 @keyframes panelSlideRight { from { transform: translateX(40px) scale(.94); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
 @keyframes vsPop { from { transform: scale(.75); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes scanMove { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+@keyframes cardRise { from { transform: translateY(14px) scale(.96); opacity: 0; } 70% { transform: translateY(-2px) scale(1.01); opacity: 1; } to { transform: translateY(0) scale(1); opacity: 1; } }

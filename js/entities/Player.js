@@ -136,8 +136,10 @@ export class Player {
 
   getPose() {
     const visuals = this.character.visuals;
-    const t = performance.now() * 0.0065 * visuals.poseTempo + this.x * 0.01;
+    const tempo = visuals.poseTempo || 1;
+    const t = performance.now() * 0.0062 * tempo + this.x * 0.01;
     const stride = Math.sin(t);
+    const stance = visuals.stance || {};
 
     const base = {
       torsoScaleY: 1,
@@ -149,9 +151,9 @@ export class Player {
       legLeft: -1,
       legRight: 1,
       kneeBend: 0,
-      lean: visuals.stance.lean,
+      lean: stance.lean || 0,
       squash: 1,
-      bob: Math.sin(t * 0.6) * 1.3,
+      bob: Math.sin(t * (0.52 + tempo * 0.08)) * (1.1 + (stance.bobAmp || 0)),
     };
 
     if (this.animState === ANIM_STATES.MOVE) {
@@ -159,28 +161,28 @@ export class Player {
       base.armRight += 6 + stride * -6;
       base.legLeft += stride * 4;
       base.legRight += stride * -4;
-      base.kneeBend = Math.abs(stride) * 2;
-      base.bob += Math.abs(stride) * 1.2;
+      base.kneeBend = Math.abs(stride) * (2 + (stance.kneeBias || 0));
+      base.bob += Math.abs(stride) * (1.1 + (stance.bobAmp || 0));
     } else if (this.animState === ANIM_STATES.JUMP_RISE) {
       base.armLift = -15;
       base.headY = -62;
       base.torsoScaleY = 0.95;
       base.torsoScaleX = 1.06;
-      base.bob = -2;
+      base.bob = -2.6 - (stance.jumpLift || 0);
     } else if (this.animState === ANIM_STATES.JUMP_FALL) {
       base.armLift = -6;
       base.kneeBend = 4;
       base.torsoScaleY = 1.05;
       base.torsoScaleX = 0.96;
-      base.bob = 1;
+      base.bob = 1.4;
     } else if (this.animState === ANIM_STATES.SPIKE) {
       base.armLeft -= 4;
-      base.armRight += 15;
-      base.armLift = -22;
-      base.lean -= 8;
+      base.armRight += 16 + (stance.spikeReach || 0);
+      base.armLift = -24 - (stance.spikeReach || 0) * 0.5;
+      base.lean -= 9;
       base.headY = -63;
-      base.torsoScaleY = 0.9;
-      base.torsoScaleX = 1.1;
+      base.torsoScaleY = 0.88;
+      base.torsoScaleX = 1.12;
     } else if (this.animState === ANIM_STATES.BLOCK) {
       base.armLeft -= 12;
       base.armRight += 12;
@@ -259,13 +261,19 @@ export class Player {
     ctx.scale(pose.torsoScaleX, pose.torsoScaleY);
 
     const outline = v.outline;
+    const stance = v.stance || {};
+    const torsoWidth = 32 + (stance.bulk || 0);
+    const shoulderLift = stance.shoulderLift || 0;
+    const headWidth = 26 + (stance.headSize || 0);
     const px = (x0, y0, w, h, color) => {
       ctx.fillStyle = outline;
-      ctx.fillRect(x0 - 2, y0 - 2, w + 4, h + 4);
+      ctx.fillRect(x0 - 1, y0 - 1, w + 2, h + 2);
       ctx.fillStyle = color;
       ctx.fillRect(x0, y0, w, h);
-      ctx.fillStyle = 'rgba(255,255,255,0.12)';
-      ctx.fillRect(x0, y0, w, Math.max(2, Math.floor(h * 0.25)));
+      ctx.fillStyle = 'rgba(255,255,255,0.13)';
+      ctx.fillRect(x0, y0, w, Math.max(1, Math.floor(h * 0.2)));
+      ctx.fillStyle = 'rgba(0,0,0,0.12)';
+      ctx.fillRect(x0, y0 + Math.floor(h * 0.68), w, Math.max(1, Math.floor(h * 0.3)));
     };
 
     px(-11 + v.stance.legSpread, -17 + pose.kneeBend, 10, 15, v.legs);
@@ -273,13 +281,13 @@ export class Player {
     px(-11 + v.stance.legSpread, -4 + pose.kneeBend, 10, 6, v.shoes);
     px(2 + v.stance.legSpread, -4 + pose.kneeBend, 10, 6, v.shoes);
 
-    px(-16, -58, 32, 43, v.torso);
-    px(-21 + pose.armLeft, -52 + pose.armLift, 9, 25, v.shoulder);
-    px(12 + pose.armRight, -52 + pose.armLift, 9, 25, v.shoulder);
-    px(-21 + pose.armLeft, -31 + pose.armLift, 9, 8, v.gloves);
-    px(12 + pose.armRight, -31 + pose.armLift, 9, 8, v.gloves);
+    px(-Math.floor(torsoWidth / 2), -58, torsoWidth, 43, v.torso);
+    px(-21 + pose.armLeft, -52 + pose.armLift + shoulderLift, 9, 25, v.shoulder);
+    px(12 + pose.armRight, -52 + pose.armLift + shoulderLift, 9, 25, v.shoulder);
+    px(-21 + pose.armLeft, -31 + pose.armLift + shoulderLift, 9, 8, v.gloves);
+    px(12 + pose.armRight, -31 + pose.armLift + shoulderLift, 9, 8, v.gloves);
 
-    px(-13, pose.headY, 26, 20, v.skin);
+    px(-Math.floor(headWidth / 2), pose.headY, headWidth, 20, v.skin);
     px(-15, pose.headY - 8, 30, 8, v.hair);
     px(-8, pose.headY - 11, 16, 4, v.headgear);
     px(-3, -44, 6, 12, v.band);

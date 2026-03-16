@@ -221,9 +221,9 @@ export class Game {
   drawArenaBackdrop(ctx, intensity = 1) {
     const t = performance.now() * 0.001;
     const gradient = ctx.createLinearGradient(0, 0, 0, this.height);
-    gradient.addColorStop(0, '#21366f');
-    gradient.addColorStop(0.38, '#172b59');
-    gradient.addColorStop(1, '#090f26');
+    gradient.addColorStop(0, '#1d3268');
+    gradient.addColorStop(0.4, '#13264f');
+    gradient.addColorStop(1, '#080f27');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, this.width, this.height);
 
@@ -236,7 +236,7 @@ export class Game {
     const parallaxOffsetFar = Math.sin(t * 0.24) * 20;
     const parallaxOffsetMid = Math.sin(t * 0.38) * 30;
 
-    ctx.fillStyle = '#13254d';
+    ctx.fillStyle = '#102248';
     for (let i = -1; i < 6; i += 1) {
       const x = i * 152 + parallaxOffsetFar;
       ctx.fillRect(x, 178, 108, 178);
@@ -245,7 +245,7 @@ export class Game {
       ctx.fillStyle = '#13254d';
     }
 
-    ctx.fillStyle = '#1d376a';
+    ctx.fillStyle = '#1a3261';
     for (let i = -1; i < 7; i += 1) {
       const x = i * 126 + parallaxOffsetMid;
       const h = 140 + (i % 2) * 28;
@@ -261,7 +261,7 @@ export class Game {
       ctx.fillRect(40 + i * 90, 90 + (i % 2) * 35, 70, 8);
     }
 
-    ctx.fillStyle = '#274883';
+    ctx.fillStyle = '#22447c';
     for (let i = 0; i < 6; i += 1) ctx.fillRect(0, 248 + i * 70, this.width, 38);
 
     for (let i = 0; i < 36; i += 1) {
@@ -281,6 +281,15 @@ export class Game {
       ctx.fillRect(bx + 4, 674 + wave, 20, 4);
       ctx.fillStyle = '#86b9ff';
       ctx.fillRect(bx + 26, 674 + wave, 20, 4);
+    }
+
+    for (let i = 0; i < 5; i += 1) {
+      const bx = 86 + i * 126;
+      const wave = Math.sin(t * 1.8 + i * 0.7) * 5;
+      ctx.fillStyle = 'rgba(255,234,189,0.65)';
+      ctx.fillRect(bx, 638 + wave, 2, 28);
+      ctx.fillStyle = i % 2 === 0 ? '#f25f6d' : '#5dc5ff';
+      ctx.fillRect(bx + 2, 640 + wave, 22, 10);
     }
 
     ctx.fillStyle = '#355d9f';
@@ -316,6 +325,13 @@ export class Game {
       ctx.fillRect(24 + i * 34, 970 + Math.sin(t * 3 + i) * intensity * 5, 10, 10);
     }
 
+    for (let i = 0; i < 16; i += 1) {
+      const driftX = ((i * 47) + t * 26) % this.width;
+      const driftY = 680 + (i * 29) % 250;
+      ctx.fillStyle = `rgba(193,224,255,${0.06 * intensity})`;
+      ctx.fillRect(driftX, driftY, 2, 2);
+    }
+
     const spotlight = ctx.createRadialGradient(this.width * 0.5, 670, 40, this.width * 0.5, 720, 280);
     spotlight.addColorStop(0, `rgba(158, 224, 255, ${0.34 * intensity})`);
     spotlight.addColorStop(1, 'rgba(158, 224, 255, 0)');
@@ -344,6 +360,8 @@ export class Game {
       ctx.fillRect(x0 - 1, y0 - 1, w + 2, h + 2);
       ctx.fillStyle = color;
       ctx.fillRect(x0, y0, w, h);
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.fillRect(x0, y0, w, Math.max(1, Math.floor(h * 0.2)));
     };
 
     px(-10, -16, 9, 12, v.legs);
@@ -373,7 +391,7 @@ export class Game {
     ctx.save();
     ctx.translate(360, 880 + bob);
 
-    ctx.fillStyle = '#0f1f49';
+    ctx.fillStyle = '#0d1c44';
     ctx.fillRect(-146, -242, 292, 262);
     const cg = ctx.createLinearGradient(-120, -220, 120, -20);
     cg.addColorStop(0, hero.cardGradient[0]);
