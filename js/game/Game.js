@@ -286,6 +286,17 @@ export class Game {
     ctx.fillStyle = '#355d9f';
     ctx.fillRect(0, 915, this.width, 210);
 
+    const crowdBands = ['#203f73', '#274d87', '#315b9a'];
+    for (let row = 0; row < 3; row += 1) {
+      ctx.fillStyle = crowdBands[row];
+      ctx.fillRect(0, 812 + row * 36, this.width, 34);
+      for (let i = 0; i < 30; i += 1) {
+        const sway = Math.sin(t * (1.7 + row * 0.3) + i * 0.7) * 2;
+        ctx.fillStyle = i % 3 === 0 ? 'rgba(246,213,132,0.45)' : 'rgba(184,220,255,0.2)';
+        ctx.fillRect(10 + i * 24, 815 + row * 36 + sway, 8, 8);
+      }
+    }
+
     ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
     for (let i = 0; i < 5; i += 1) {
       ctx.fillRect(24 + i * 140, 920 + (i % 2) * 10, 110, 4);
@@ -304,6 +315,12 @@ export class Game {
       ctx.fillStyle = `rgba(255,255,255,${0.08 + (i % 2) * 0.04})`;
       ctx.fillRect(24 + i * 34, 970 + Math.sin(t * 3 + i) * intensity * 5, 10, 10);
     }
+
+    const spotlight = ctx.createRadialGradient(this.width * 0.5, 670, 40, this.width * 0.5, 720, 280);
+    spotlight.addColorStop(0, `rgba(158, 224, 255, ${0.34 * intensity})`);
+    spotlight.addColorStop(1, 'rgba(158, 224, 255, 0)');
+    ctx.fillStyle = spotlight;
+    ctx.fillRect(0, 520, this.width, 420);
 
     ctx.fillStyle = `rgba(255, 220, 130, ${0.55 * intensity})`;
     const pulse = (Math.sin(performance.now() * 0.004) * 0.5 + 0.5) * intensity;

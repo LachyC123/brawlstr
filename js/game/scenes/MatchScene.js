@@ -233,12 +233,19 @@ export class MatchScene {
       const won = this.playerScore > this.aiScore;
       const beforeTrophies = this.game.save.profile.trophies;
       let trophyDelta = 0;
-      if (this.modeRanked) {
-        trophyDelta = this.game.progression.onMatchResult({ won, spikes: this.stats.spikes, specials: this.stats.specials });
-      }
-      const afterTrophies = this.game.save.profile.trophies;
-      const roadProgress = this.game.progression.evaluateRoadProgress(beforeTrophies, afterTrophies);
       const earnedCoins = won ? 60 : 30;
+
+      if (this.modeRanked) trophyDelta = this.game.progression.onMatchResult({ won, spikes: this.stats.spikes, specials: this.stats.specials });
+      else this.game.save.currencies.coins += earnedCoins;
+
+      const afterTrophies = this.game.save.profile.trophies;
+      const roadProgress = this.game.progression.evaluateRoadProgress(beforeTrophies, afterTrophies) || {
+        crossedMilestones: [],
+        nextMilestone: { trophies: afterTrophies },
+        previousMilestone: { trophies: afterTrophies },
+        progress: 0,
+      };
+
       const matchBonus = won ? { type: 'pack', amount: 1, label: 'Victory Capsule' } : { type: 'coins', amount: 30, label: 'Match Coins' };
       if (won) this.game.save.currencies.packs += 1;
       this.game.save.lastReward = won ? 'Win bonus: +1 capsule' : 'Match bonus: +30 coins';
@@ -246,21 +253,24 @@ export class MatchScene {
       this.player.setResultPose(won);
       this.ai.setResultPose(!won);
       this.game.audio.play(won ? 'victory' : 'defeat');
-      this.game.showMatchResults({
-        won,
-        ranked: this.modeRanked,
-        playerScore: this.playerScore,
-        aiScore: this.aiScore,
-        spikes: this.stats.spikes,
-        specials: this.stats.specials,
-        trophyDelta,
-        beforeTrophies,
-        afterTrophies,
-        roadProgress,
-        earnedCoins,
-        matchBonus,
-        matchup: this.matchup,
-      });
+
+      setTimeout(() => {
+        this.game.showMatchResults({
+          won,
+          ranked: this.modeRanked,
+          playerScore: this.playerScore,
+          aiScore: this.aiScore,
+          spikes: this.stats.spikes,
+          specials: this.stats.specials,
+          trophyDelta,
+          beforeTrophies,
+          afterTrophies,
+          roadProgress,
+          earnedCoins,
+          matchBonus,
+          matchup: this.matchup,
+        });
+      }, 420);
       return;
     }
 
@@ -308,6 +318,12 @@ export class MatchScene {
       ctx.fillStyle = `rgba(180, 228, 255, ${0.1 + p.size * 0.08})`;
       ctx.fillRect(p.x, p.y, p.size + 1, p.size + 1);
     });
+
+    for (let i = 0; i < 9; i += 1) {
+      const glow = 0.14 + Math.sin(performance.now() * 0.004 + i) * 0.06;
+      ctx.fillStyle = `rgba(255, 228, 146, ${glow})`;
+      ctx.fillRect(36 + i * 82, this.floorY - 204 + (i % 2) * 12, 34, 6);
+    }
 
     ctx.fillStyle = 'rgba(6, 12, 34, 0.28)';
     ctx.fillRect(this.player.x - 32, this.floorY - 2, 64, 8);

@@ -241,6 +241,10 @@ export class Player {
       ctx.strokeRect(-31, -87, 62, 83);
       ctx.fillStyle = `${this.character.fxColor}33`;
       ctx.fillRect(-30, -86, 60, 81);
+
+      const pulse = (Math.sin(performance.now() * 0.02) * 0.5 + 0.5) * 0.45;
+      ctx.fillStyle = `rgba(255,255,255,${pulse})`;
+      ctx.fillRect(-28, -82, 56, 8);
     }
 
     if (this.specialReady && this.specialTimer <= 0) {
@@ -286,9 +290,18 @@ export class Player {
     ctx.fillRect(-7, pose.headY + 6, 3, 3);
     ctx.fillRect(4, pose.headY + 6, 3, 3);
 
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.fillRect(-10, pose.headY + 2, 20, 2);
+    ctx.fillRect(-14, -56, 28, 3);
+
     ctx.fillStyle = v.band;
     ctx.font = 'bold 9px Inter';
     ctx.fillText(v.emblem, -4, -34);
+
+    if (this.animState === ANIM_STATES.WIN) {
+      ctx.fillStyle = 'rgba(255, 232, 142, 0.4)';
+      ctx.fillRect(-24, -86, 48, 4);
+    }
 
     ctx.restore();
   }
